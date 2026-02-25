@@ -22,7 +22,9 @@ const EmployeeEditModal = ({ employee, departments, shifts, allEmployees, onSave
     const [form, setForm] = useState({
         first_name: employee.first_name || '', last_name: employee.last_name || '',
         email: employee.email || '',
-        role: employee.role || 'employee' as Profile['role'], department: employee.department || '',
+        role: employee.role || 'employee' as Profile['role'],
+        employee_type: employee.employee_type || 'full-time',
+        department: employee.department || '',
         position: employee.position || '', phone: employee.phone || '',
         is_active: employee.is_active !== false,
         base_salary: employee.base_salary || 0,
@@ -59,10 +61,13 @@ const EmployeeEditModal = ({ employee, departments, shifts, allEmployees, onSave
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div><label className="block text-xs text-gray-400 mb-1">Role</label><select value={form.role} onChange={e => setForm({ ...form, role: e.target.value as Profile['role'] })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2 text-white text-sm outline-none"><option value="employee">Employee</option><option value="manager">Manager</option><option value="hr">HR</option><option value="admin">Admin</option></select></div>
-                            <div><label className="block text-xs text-gray-400 mb-1">หัวหน้างาน (ผู้อนุมัติขั้น 1)</label><select value={form.manager_id} onChange={e => setForm({ ...form, manager_id: e.target.value })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2 text-white text-sm outline-none"><option value="">-- ไม่มี --</option>{allEmployees.filter(e => e.id !== employee.id).map(e => <option key={e.id} value={e.id}>{e.first_name} {e.last_name || ''}</option>)}</select></div>
+                            <div><label className="block text-xs text-gray-400 mb-1">{t.employeeType}</label><select value={form.employee_type} onChange={e => setForm({ ...form, employee_type: e.target.value })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2 text-white text-sm outline-none"><option value="full-time">{t.fullTime}</option><option value="daily">{t.daily}</option><option value="probation">{t.probation}</option><option value="resigned">{t.resigned}</option></select></div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
+                            <div><label className="block text-xs text-gray-400 mb-1">หัวหน้างาน (ผู้อนุมัติขั้น 1)</label><select value={form.manager_id} onChange={e => setForm({ ...form, manager_id: e.target.value })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2 text-white text-sm outline-none"><option value="">-- ไม่มี --</option>{allEmployees.filter(e => e.id !== employee.id).map(e => <option key={e.id} value={e.id}>{e.first_name} {e.last_name || ''}</option>)}</select></div>
                             <div><label className="block text-xs text-gray-400 mb-1">แผนก</label><select value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2 text-white text-sm outline-none"><option value="">--</option>{departments.filter(d => d.is_active).map(d => <option key={d.id} value={d.name}>{d.name}</option>)}</select></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
                             <div><label className="block text-xs text-gray-400 mb-1">ตำแหน่ง</label><input value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2 text-white text-sm focus:border-indigo-500 focus:outline-none" /></div>
                         </div>
                     </div>
@@ -138,7 +143,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
     const [showAddEmployee, setShowAddEmployee] = useState(false);
     const [newEmp, setNewEmp] = useState({
         email: '', password: '123456', first_name: '', last_name: '', employee_code: '',
-        role: 'employee', department: '', position: '', phone: '',
+        role: 'employee', employee_type: 'full-time', department: '', position: '', phone: '',
         manager_id: '', shift_id: '', base_salary: 0, bank_name: '',
         bank_account: '', tax_id: '', social_security_id: '',
         start_date: new Date().toISOString().split('T')[0]
@@ -647,6 +652,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                     last_name: newEmp.last_name,
                     employee_code: newEmp.employee_code.toUpperCase() || null,
                     role: newEmp.role,
+                    employee_type: newEmp.employee_type || 'full-time',
                     department: newEmp.department || null,
                     position: newEmp.position || null,
                     start_date: newEmp.start_date || null,
@@ -681,7 +687,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
             setShowAddEmployee(false);
             setNewEmp({
                 email: '', password: '123456', first_name: '', last_name: '', employee_code: '',
-                role: 'employee', department: '', position: '', phone: '',
+                role: 'employee', employee_type: 'full-time', department: '', position: '', phone: '',
                 manager_id: '', shift_id: '', base_salary: 0, bank_name: '',
                 bank_account: '', tax_id: '', social_security_id: '',
                 start_date: new Date().toISOString().split('T')[0]
@@ -919,12 +925,17 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                             <div className="flex justify-between items-center gap-4"><div className="relative flex-1 max-w-md"><Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" /><input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={t.searchEmployees} className="w-full bg-gray-900/50 border border-gray-700 rounded-xl pl-10 pr-4 py-2 text-white text-sm focus:border-indigo-500 focus:outline-none" /></div><div className="flex items-center gap-3"><span className="text-sm text-gray-400">{filteredEmployees.length} {t.persons}</span>                                <button onClick={() => setShowAddEmployee(true)} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center gap-2 active:scale-95 shadow-md">
                                 <UserPlus size={18} strokeWidth={2.5} /> {t.addEmployee}
                             </button></div></div>
-                            <div className="glass-panel overflow-hidden"><table className="w-full text-left border-collapse"><thead><tr className="bg-white/5 border-b border-white/5 text-gray-400 text-xs uppercase tracking-wider"><th className="p-3">{t.name}</th><th className="p-3">{t.idHeader}</th><th className="p-3">{t.roleHeader}</th><th className="p-3">{t.deptHeader}</th><th className="p-3">{t.shiftHeader}</th><th className="p-3 text-right">{t.salaryHeader}</th><th className="p-3 text-center">{t.statusHeader}</th><th className="p-3 text-right">{t.manageHeader}</th></tr></thead>
+                            <div className="glass-panel overflow-hidden"><table className="w-full text-left border-collapse"><thead><tr className="bg-white/5 border-b border-white/5 text-gray-400 text-xs uppercase tracking-wider"><th className="p-3">{t.name}</th><th className="p-3">{t.idHeader}</th><th className="p-3">Role & Type</th><th className="p-3">{t.deptHeader}</th><th className="p-3">{t.shiftHeader}</th><th className="p-3 text-right">{t.salaryHeader}</th><th className="p-3 text-center">{t.statusHeader}</th><th className="p-3 text-right">{t.manageHeader}</th></tr></thead>
                                 <tbody className="divide-y divide-white/5">{filteredEmployees.map(emp => (
                                     <tr key={emp.id} className="hover:bg-white/5 transition">
                                         <td className="p-3"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden"><img src={emp.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.email}`} alt="" className="w-full h-full object-cover" /></div><div><div className="text-sm font-medium">{emp.first_name} {emp.last_name}</div><div className="text-xs text-gray-500">{emp.email}</div></div></div></td>
                                         <td className="p-3"><span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">{emp.employee_code || '-'}</span></td>
-                                        <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded border capitalize ${emp.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : emp.role === 'hr' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : emp.role === 'manager' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20'}`}>{emp.role}</span></td>
+                                        <td className="p-3">
+                                            <div className="flex flex-col gap-1 items-start">
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded border capitalize ${emp.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : emp.role === 'hr' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : emp.role === 'manager' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20'}`}>{emp.role}</span>
+                                                <span className="text-[10px] text-gray-400 italic">{(t as any)[emp.employee_type?.replace('-', '') || 'fullTime'] || emp.employee_type || t.fullTime}</span>
+                                            </div>
+                                        </td>
                                         <td className="p-3 text-sm text-gray-400">{emp.department || '-'}</td>
                                         <td className="p-3 text-xs text-gray-400">{emp.work_shifts?.label || <span className="text-gray-600">ไม่กำหนด</span>}</td>
                                         <td className="p-3 text-right text-sm font-mono">{emp.base_salary ? `฿${emp.base_salary.toLocaleString()}` : '-'}</td>
@@ -1370,6 +1381,9 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div><label className="block text-xs text-gray-400 mb-1">Role</label><select value={newEmp.role} onChange={e => setNewEmp({ ...newEmp, role: e.target.value })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2.5 text-white text-sm outline-none"><option value="employee">Employee</option><option value="manager">Manager</option><option value="hr">HR</option><option value="admin">Admin</option></select></div>
+                                            <div><label className="block text-xs text-gray-400 mb-1">{t.employeeType}</label><select value={newEmp.employee_type} onChange={e => setNewEmp({ ...newEmp, employee_type: e.target.value })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2.5 text-white text-sm outline-none"><option value="full-time">{t.fullTime}</option><option value="daily">{t.daily}</option><option value="probation">{t.probation}</option><option value="resigned">{t.resigned}</option></select></div>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-3">
                                             <div><label className="block text-xs text-gray-400 mb-1">หัวหน้างาน (ผู้อนุมัติขั้น 1)</label><select value={newEmp.manager_id} onChange={e => setNewEmp({ ...newEmp, manager_id: e.target.value })} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-2.5 text-white text-sm outline-none"><option value="">-- ไม่มี --</option>{employees.map(e => <option key={e.id} value={e.id}>{e.first_name} {e.last_name || ''}</option>)}</select></div>
                                         </div>
                                     </div>

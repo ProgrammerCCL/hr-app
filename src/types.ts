@@ -18,6 +18,7 @@ export interface Profile {
     tax_id?: string;
     social_security_id?: string;
     employee_code?: string;
+    employee_type?: 'full-time' | 'daily' | 'probation' | 'resigned' | string;
     shift_id?: string;
     created_at?: string;
     work_shifts?: WorkShift;

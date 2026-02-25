@@ -214,6 +214,11 @@ type TranslationKeys = {
     shift: string;
     salary: string;
     status: string;
+    employeeType: string;
+    fullTime: string;
+    daily: string;
+    probation: string;
+    resigned: string;
     active: string;
     inactive: string;
     manage: string;
@@ -612,6 +617,11 @@ const translations: Record<Lang, TranslationKeys> = {
         shift: 'กะ',
         salary: 'เงินเดือน',
         status: 'สถานะ',
+        employeeType: 'ประเภทพนักงาน',
+        fullTime: 'พนักงานประจำ',
+        daily: 'รายวัน',
+        probation: 'ทดลองงาน',
+        resigned: 'ลาออก',
         active: 'ใช้งาน',
         inactive: 'ปิดใช้งาน',
         manage: 'จัดการ',
@@ -997,6 +1007,11 @@ const translations: Record<Lang, TranslationKeys> = {
         shift: 'Shift',
         salary: 'Salary',
         status: 'Status',
+        employeeType: 'Employee Type',
+        fullTime: 'Full-time',
+        daily: 'Daily',
+        probation: 'Probation',
+        resigned: 'Resigned',
         active: 'Active',
         inactive: 'Inactive',
         manage: 'Manage',
@@ -1382,6 +1397,11 @@ const translations: Record<Lang, TranslationKeys> = {
         shift: 'シフト',
         salary: '給与',
         status: 'ステータス',
+        employeeType: '雇用形態',
+        fullTime: '正社員',
+        daily: '日給',
+        probation: '試用期間',
+        resigned: '退職',
         active: '有効',
         inactive: '無効',
         manage: '管理',
