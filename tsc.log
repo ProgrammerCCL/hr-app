@@ -1,0 +1,33 @@
+src/App.tsx(38,12): error TS6133: 'profile' is declared but its value is never read.
+src/pages/admin/ExecDashboard.tsx(3,65): error TS6133: 'Calendar' is declared but its value is never read.
+src/pages/admin/ExecDashboard.tsx(31,12): error TS6133: 'shifts' is declared but its value is never read.
+src/pages/admin/ExecDashboard.tsx(92,27): error TS6133: 'inHHMM' is declared but its value is never read.
+src/pages/admin/ExecDashboard.tsx(156,11): error TS6133: 'totalPresent' is declared but its value is never read.
+src/pages/admin/KPIPage.tsx(3,21): error TS6133: 'Star' is declared but its value is never read.
+src/pages/admin/KPIPage.tsx(3,27): error TS6133: 'Award' is declared but its value is never read.
+src/pages/admin/KPIPage.tsx(3,34): error TS6133: 'TrendingUp' is declared but its value is never read.
+src/pages/admin/KPIPage.tsx(3,46): error TS6133: 'Users' is declared but its value is never read.
+src/pages/admin/MonthlyReport.tsx(3,1): error TS6192: All imports in import declaration are unused.
+src/pages/admin/MonthlyReport.tsx(5,24): error TS6196: 'AttendanceLog' is declared but never used.
+src/pages/admin/MonthlyReport.tsx(5,39): error TS6196: 'LeaveRequest' is declared but never used.
+src/pages/admin/PayrollPage.tsx(3,10): error TS6133: 'DollarSign' is declared but its value is never read.
+src/pages/admin/PayrollPage.tsx(3,47): error TS6133: 'AlertTriangle' is declared but its value is never read.
+src/pages/admin/PayrollPage.tsx(3,62): error TS6133: 'Save' is declared but its value is never read.
+src/pages/admin/PayrollPage.tsx(3,68): error TS6133: 'FileText' is declared but its value is never read.
+src/pages/admin/PayrollPage.tsx(14,11): error TS6133: 'user' is declared but its value is never read.
+src/pages/admin/PayrollPage.tsx(24,11): error TS6133: 'otMultiplier' is declared but its value is never read.
+src/pages/admin/PayslipPage.tsx(3,19): error TS6133: 'Download' is declared but its value is never read.
+src/pages/admin/PayslipPage.tsx(3,32): error TS6133: 'Building' is declared but its value is never read.
+src/pages/admin/TaxDocPage.tsx(2,20): error TS6133: 'useEffect' is declared but its value is never read.
+src/pages/admin/TaxDocPage.tsx(3,29): error TS6133: 'X' is declared but its value is never read.
+src/pages/admin/TaxDocPage.tsx(3,32): error TS6133: 'DollarSign' is declared but its value is never read.
+src/pages/admin/TaxDocPage.tsx(5,24): error TS6196: 'PayrollRecord' is declared but never used.
+src/pages/EmployeeDashboard.tsx(3,109): error TS6133: 'Navigation' is declared but its value is never read.
+src/pages/EmployeeDashboard.tsx(568,157): error TS2552: Cannot find name 'Clock'. Did you mean 'Lock'?
+src/pages/EmployeeDashboard.tsx(596,70): error TS2552: Cannot find name 'Clock'. Did you mean 'Lock'?
+src/pages/LeaveRequest.tsx(3,21): error TS6133: 'Clock' is declared but its value is never read.
+src/pages/LeaveRequest.tsx(3,28): error TS6133: 'Calendar' is declared but its value is never read.
+src/pages/LeaveRequest.tsx(3,38): error TS6133: 'Check' is declared but its value is never read.
+src/pages/LeaveRequest.tsx(3,45): error TS6133: 'X' is declared but its value is never read.
+src/pages/SiteVisitPage.tsx(3,57): error TS6133: 'CheckCircle' is declared but its value is never read.
+src/pages/SiteVisitPage.tsx(101,57): error TS6133: 'pos' is declared but its value is never read.
