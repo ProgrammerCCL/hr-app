@@ -1,7 +1,7 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
+import { AlertCircle } from 'lucide-react';
 import { supabase } from './lib/supabase/client';
 import Login from './pages/Login';
 import EmployeeDashboard from './pages/EmployeeDashboard';
@@ -103,13 +103,54 @@ function AuthWrapper() {
     );
 }
 
+import React, { Component, ErrorInfo } from 'react';
+
+class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: any}> {
+    constructor(props: {children: ReactNode}) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error: any) {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error: any, errorInfo: ErrorInfo) {
+        console.error("ErrorBoundary caught an error", error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-6 text-center">
+                    <div className="max-w-md w-full bg-slate-800 p-8 rounded-3xl border border-rose-500/30 shadow-2xl">
+                        <div className="w-20 h-20 bg-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <AlertCircle size={48} className="text-white" />
+                        </div>
+                        <h2 className="text-3xl font-black mb-4">Application Error</h2>
+                        <p className="text-slate-400 mb-6 font-bold leading-relaxed">
+                            {this.state.error?.message || "An unexpected error occurred."}
+                        </p>
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="w-full py-4 bg-indigo-600 rounded-2xl font-black hover:bg-indigo-500 transition-all"
+                        >
+                            Refresh Page
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 function App() {
     return (
-        <AppProvider>
-            <AuthProvider>
-                <AuthWrapper />
-            </AuthProvider>
-        </AppProvider>
+        <ErrorBoundary>
+            <AppProvider>
+                <AuthProvider>
+                    <AuthWrapper />
+                </AuthProvider>
+            </AppProvider>
+        </ErrorBoundary>
     );
 }
 
