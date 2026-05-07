@@ -96,9 +96,9 @@ const Login = () => {
                         </div>
 
                         <div className="my-auto">
-                            <h1 className="text-3xl lg:text-4xl font-black leading-[1.15] mb-4 tracking-tight drop-shadow-sm">
-                                {t.loginPromoteTitle}
-                            </h1>
+                            <div className="text-3xl lg:text-4xl font-black leading-[1.15] mb-4 tracking-tight drop-shadow-sm">
+                                {String(t.loginPromoteTitle || '')}
+                            </div>
                             <p className="text-blue-100/90 text-[15px] font-medium mb-12 max-w-sm leading-relaxed">
                                 {t.loginPromoteDesc}
                             </p>
