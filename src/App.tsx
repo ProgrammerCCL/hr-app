@@ -105,32 +105,40 @@ function AuthWrapper() {
 
 import React, { Component, ErrorInfo } from 'react';
 
-class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: any}> {
+class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: any, info: any}> {
     constructor(props: {children: ReactNode}) {
         super(props);
-        this.state = { hasError: false, error: null };
+        this.state = { hasError: false, error: null, info: null };
     }
     static getDerivedStateFromError(error: any) {
         return { hasError: true, error };
     }
-    componentDidCatch(error: any, errorInfo: ErrorInfo) {
-        console.error("ErrorBoundary caught an error", error, errorInfo);
+    componentDidCatch(error: any, info: ErrorInfo) {
+        this.setState({ info });
+        console.error("ErrorBoundary caught an error", error, info);
     }
     render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-6 text-center">
-                    <div className="max-w-md w-full bg-slate-800 p-8 rounded-3xl border border-rose-500/30 shadow-2xl">
-                        <div className="w-20 h-20 bg-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <AlertCircle size={48} className="text-white" />
+                <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
+                    <div className="max-w-4xl w-full bg-slate-800 p-8 rounded-3xl border border-rose-500/30 shadow-2xl overflow-hidden">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 bg-rose-500 rounded-xl flex items-center justify-center shrink-0">
+                                <AlertCircle size={28} className="text-white" />
+                            </div>
+                            <h2 className="text-2xl font-black">Application Error</h2>
                         </div>
-                        <h2 className="text-3xl font-black mb-4">Application Error</h2>
-                        <p className="text-slate-400 mb-6 font-bold leading-relaxed">
-                            {this.state.error?.message || "An unexpected error occurred."}
-                        </p>
+                        <div className="bg-slate-950/50 rounded-2xl p-6 mb-6 border border-slate-700/50">
+                            <p className="text-rose-400 font-black mb-2 text-lg">
+                                {this.state.error?.toString() || "Unknown Error"}
+                            </p>
+                            <pre className="text-xs text-slate-400 font-mono overflow-auto max-h-[300px] whitespace-pre-wrap leading-relaxed">
+                                {this.state.error?.stack}
+                            </pre>
+                        </div>
                         <button 
                             onClick={() => window.location.reload()}
-                            className="w-full py-4 bg-indigo-600 rounded-2xl font-black hover:bg-indigo-500 transition-all"
+                            className="px-8 py-4 bg-indigo-600 rounded-2xl font-black hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
                         >
                             Refresh Page
                         </button>
