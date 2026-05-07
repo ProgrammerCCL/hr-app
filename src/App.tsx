@@ -44,16 +44,20 @@ function AuthWrapper() {
 
             if (data) {
                 setProfileState(data);
-                const role = (data.role || '').toLowerCase();
+                const role = (data.role || 'employee').toLowerCase();
                 const isAdmin = role === 'admin' || role === 'hr' || role === 'manager';
+                console.log('User logged in with role:', role, 'isAdmin:', isAdmin);
                 if (!currentView) {
                     setCurrentView(isAdmin ? 'admin-dashboard' : 'employee-dashboard');
                 }
-            } else if (!currentView) {
-                setCurrentView('employee-dashboard');
+            } else {
+                console.warn('No profile found for user, defaulting to employee-dashboard');
+                if (!currentView) {
+                    setCurrentView('employee-dashboard');
+                }
             }
         } catch (error) {
-            console.error('Error fetching profile:', error);
+            console.error('Critical Error in fetchProfile:', error);
             if (!currentView) setCurrentView('employee-dashboard');
         } finally {
             setProfileLoading(false);
