@@ -73,7 +73,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [theme]);
 
-    const t = translations[lang] || translations['th'];
+    const baseTranslations = translations[lang] || translations['th'];
+    
+    // Wrap translations in a Proxy to prevent crashes if a key is missing
+    const t = new Proxy(baseTranslations, {
+        get: (target, prop) => {
+            if (typeof prop === 'string' && !(prop in target)) {
+                console.warn(`Missing translation key: "${prop}" for language: "${lang}"`);
+                return `[${prop}]`; // Fallback to the key name instead of undefined
+            }
+            return (target as any)[prop];
+        }
+    });
 
     // Toasts State
     const [toasts, setToasts] = useState<Toast[]>([]);
