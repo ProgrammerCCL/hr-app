@@ -1,7 +1,7 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from './lib/supabase/client';
 import Login from './pages/Login';
 import EmployeeDashboard from './pages/EmployeeDashboard';
@@ -13,7 +13,7 @@ import type { Lang } from './i18n/translations';
 
 function AuthWrapper() {
     const { user, loading } = useAuth();
-    const { t } = useApp() || { t: {} };
+    const { t } = useApp();
     const [currentView, setCurrentView] = useState<string | null>(null);
     const [profile, setProfileState] = useState<Profile | null>(null);
     const [profileLoading, setProfileLoading] = useState(true);
