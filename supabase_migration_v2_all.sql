@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS public.leave_requests (
 ALTER TABLE public.leave_requests ADD COLUMN IF NOT EXISTS current_step integer DEFAULT 1;
 ALTER TABLE public.leave_requests ADD COLUMN IF NOT EXISTS approval_chain_id uuid;
 ALTER TABLE public.leave_requests ADD COLUMN IF NOT EXISTS total_steps integer DEFAULT 1;
-ALTER TABLE public.leave_requests ALTER COLUMN leave_type TYPE text;
+ALTER TABLE public.leave_requests ALTER COLUMN leave_type TYPE text USING leave_type::text;
 
 -- 8. LEAVE APPROVALS
 CREATE TABLE IF NOT EXISTS public.leave_approvals (
@@ -207,13 +207,20 @@ CREATE TABLE IF NOT EXISTS public.payroll_records (
 -- 12. KPI CRITERIA
 CREATE TABLE IF NOT EXISTS public.kpi_criteria (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-  name text NOT NULL,
+  name text NOT NULL UNIQUE,
   description text,
   weight numeric DEFAULT 0,
   category text DEFAULT 'attendance',
   is_active boolean DEFAULT true,
   created_at timestamptz DEFAULT now()
 );
+
+-- Ensure name is unique even if table exists
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'kpi_criteria_name_key') THEN
+    ALTER TABLE public.kpi_criteria ADD CONSTRAINT kpi_criteria_name_key UNIQUE (name);
+  END IF;
+END $$;
 
 -- 13. KPI EVALUATIONS
 CREATE TABLE IF NOT EXISTS public.kpi_evaluations (

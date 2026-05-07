@@ -192,6 +192,9 @@ type TranslationKeys = {
     statusInactive: string;
     searchPlaceholder: string;
     netBase: string;
+    totalDistanceTeam: string;
+    km: string;
+    processed: string;
     presentHeader: string;
     lateHeader: string;
     absentHeader: string;
@@ -351,19 +354,8 @@ type TranslationKeys = {
     myDashboard: string;
     // Common Table Headers
     name: string;
-    idHeader: string;
-    roleHeader: string;
-    roleAdmin: string;
-    roleManager: string;
-    roleHR: string;
-    roleEmployee: string;
-    allRoles: string;
-    searchPlaceholder: string;
-    deptHeader: string;
     shiftHeader: string;
     salaryHeader: string;
-    statusHeader: string;
-    manageHeader: string;
     fullDay: string;
     halfDay: string;
     hourly: string;
@@ -812,18 +804,14 @@ const translations: Record<Lang, TranslationKeys> = {
         readAll: 'อ่านทั้งหมด',
         noNotifications: 'ไม่มีการแจ้งเตือน',
         myDashboard: 'ลงเวลา/ลาหยุด',
-        name: 'ชื่อ',
-        roleAdmin: 'ผู้ดูแลระบบ',
-        roleManager: 'หัวหน้า / ผู้จัดการ',
-        roleHR: 'HR',
-        roleEmployee: 'พนักงาน',
-        allRoles: 'ทุกบทบาท',
-        searchPlaceholder: 'ค้นหา ชื่อ / รหัส / อีเมล',
         fullDay: 'เต็มวัน',
         halfDay: 'ครึ่งวัน',
         hourly: 'รายชั่วโมง',
         morning: 'ช่วงเช้า (AM)',
         afternoon: 'ช่วงบ่าย (PM)',
+        totalDistanceTeam: 'ระยะทางรวมทีม',
+        km: 'กม.',
+        processed: 'ดำเนินการแล้ว',
         reasonPlaceholder: 'กรุณาระบุเหตุผลการลา...',
         attachmentHint: 'แนบเอกสาร',
         attachments: 'ใบรับรองแพทย์, รูปภาพ, เอกสาร - สูงสุด 5MB',
@@ -1263,25 +1251,14 @@ const translations: Record<Lang, TranslationKeys> = {
         readAll: 'Read All',
         noNotifications: 'No notifications',
         myDashboard: 'Time & Leave',
-        name: 'Name',
-        idHeader: 'ID',
-        roleHeader: 'Role',
-        roleAdmin: 'Administrator',
-        roleManager: 'Manager',
-        roleHR: 'HR',
-        roleEmployee: 'Employee',
-        allRoles: 'All Roles',
-        searchPlaceholder: 'Search Name / Code / Email',
-        deptHeader: 'Dept',
-        shiftHeader: 'Shift',
-        salaryHeader: 'Salary',
-        statusHeader: 'Status',
-        manageHeader: 'Manage',
         fullDay: 'Full Day',
         halfDay: 'Half Day',
         hourly: 'Hourly',
         morning: 'Morning (AM)',
         afternoon: 'Afternoon (PM)',
+        totalDistanceTeam: 'Team Distance',
+        km: 'km',
+        processed: 'Processed',
         reasonPlaceholder: 'Please specify reason...',
         attachmentHint: 'Attachment',
         attachments: "Medical certificate, images, documents - Max 5MB",

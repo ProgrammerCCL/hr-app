@@ -265,8 +265,9 @@ interface EmployeeDashboardProps {
 }
 
 const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
-    const { user, signOut } = useAuth();
-    const { t, lang } = useApp();
+    const { user } = useAuth();
+    const { t, showToast } = useApp();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('home');
     const [currentView, setCurrentView] = useState('dashboard');
     const [loading, setLoading] = useState(true);
