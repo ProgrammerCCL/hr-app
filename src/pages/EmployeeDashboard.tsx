@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Camera, MapPin, Coffee, Calendar, CalendarDays, LogOut, FileText, User, Loader2, X, Building, Briefcase, Shield, Lock, Eye, EyeOff, Crosshair, Route, Clock, Mail, Phone, CreditCard, Edit2, Check, RotateCcw, History, ChevronLeft, ChevronRight, UserCheck, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -265,8 +266,8 @@ interface EmployeeDashboardProps {
 }
 
 const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
-    const { user } = useAuth();
-    const { t, showToast } = useApp();
+    const { user, signOut } = useAuth();
+    const { t, lang, showToast } = useApp();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('home');
     const [currentView, setCurrentView] = useState('dashboard');

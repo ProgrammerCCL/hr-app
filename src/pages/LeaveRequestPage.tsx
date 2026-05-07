@@ -13,7 +13,7 @@ interface LeaveRequestPageProps {
 
 const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
     const { user } = useAuth();
-    const { t, showToast } = useApp();
+    const { t, lang, showToast } = useApp();
     const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
     const [loading, setLoading] = useState(false);
     const [requests, setRequests] = useState<LeaveRequest[]>([]);
