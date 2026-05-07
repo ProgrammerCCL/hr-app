@@ -1,12 +1,13 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Camera, MapPin, Coffee, Calendar, CalendarDays, LogOut, FileText, User, Loader2, X, Building, Briefcase, Shield, Lock, Eye, EyeOff, Crosshair, Route, Clock, Mail, Phone, CreditCard, Edit2, Check, RotateCcw, History, ChevronLeft, ChevronRight, UserCheck } from 'lucide-react';
+import { Camera, MapPin, Coffee, Calendar, CalendarDays, LogOut, FileText, User, Loader2, X, Building, Briefcase, Shield, Lock, Eye, EyeOff, Crosshair, Route, Clock, Mail, Phone, CreditCard, Edit2, Check, RotateCcw, History, ChevronLeft, ChevronRight, UserCheck, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase/client';
-import type { Profile, AttendanceLog, LeaveRequest } from '../types';
+import type { Profile, AttendanceLog, LeaveRequest, AppNotification } from '../types';
 import LeaveRequestPage from './LeaveRequestPage';
 import SiteVisitPage from './SiteVisitPage';
+import EmployeePayslipView from './EmployeePayslipView';
 import { SettingsToolbar } from '../components/SettingsToolbar';
 
 // === Haversine formula: คำนวณระยะทางระหว่าง 2 จุด GPS (กิโลเมตร) ===
@@ -99,13 +100,13 @@ const AttendanceDetailModal = ({
         const diffMs = new Date(logOut.timestamp).getTime() - new Date(logIn.timestamp).getTime();
         const hrs = Math.floor(diffMs / 3600000);
         const mins = Math.floor((diffMs % 3600000) / 60000);
-        duration = `${hrs} ชม. ${mins} น.`;
+        duration = `${hrs} ${t.hourLabel} ${mins} ${t.minuteLabel}`;
     }
 
     const tabs = [
-        { key: 'details' as const, label: 'รายละเอียด', icon: <Clock size={14} /> },
-        { key: 'photoIn' as const, label: 'ภาพเข้า', icon: <Camera size={14} />, hasData: !!logIn?.photo_url },
-        { key: 'photoOut' as const, label: 'ภาพออก', icon: <Camera size={14} />, hasData: !!logOut?.photo_url },
+        { key: 'details' as const, label: t.details, icon: <Clock size={14} /> },
+        { key: 'photoIn' as const, label: t.checkInPhoto, icon: <Camera size={14} />, hasData: !!logIn?.photo_url },
+        { key: 'photoOut' as const, label: t.checkOutPhoto, icon: <Camera size={14} />, hasData: !!logOut?.photo_url },
     ];
 
     return (
@@ -122,13 +123,13 @@ const AttendanceDetailModal = ({
                             </button>
                             <div className="flex items-center gap-2">
                                 <span className={`px-3 py-1 rounded-full text-[11px] font-black tracking-wider uppercase ${isComplete ? 'bg-white/20 text-white' : 'bg-yellow-400/30 text-yellow-100'}`}>
-                                    {isComplete ? '✓ สำเร็จ' : '⏳ รอบันทึกออก'}
+                                    {isComplete ? `✓ ${t.success_status}` : `⏳ ${t.waiting_out_status}`}
                                 </span>
                             </div>
                         </div>
 
                         <h3 className="text-white font-black text-xl mb-1 tracking-tight">
-                            {isSiteVisit ? 'บันทึกไซต์งาน' : 'บันทึกเวลาทำงาน'}
+                            {isSiteVisit ? t.siteLog : t.attendanceLog}
                         </h3>
                         <p className="text-white/70 text-sm font-medium">{dateStr}</p>
 
@@ -195,8 +196,8 @@ const AttendanceDetailModal = ({
                                         <MapPin size={18} className="text-blue-500" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">สถานที่</p>
-                                        <p className="font-bold text-slate-700 dark:text-slate-200 text-[14px]">{baseLog.location_name || 'ไม่ระบุ'}</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">{t.location}</p>
+                                        <p className="font-bold text-slate-700 dark:text-slate-200 text-[14px]">{baseLog.location_name || t.notSpecified}</p>
                                         {baseLog.location_lat && baseLog.location_lng && (
                                             <p className="text-[11px] font-mono text-slate-400 mt-1">{baseLog.location_lat.toFixed(6)}, {baseLog.location_lng.toFixed(6)}</p>
                                         )}
@@ -209,7 +210,7 @@ const AttendanceDetailModal = ({
                                         rel="noopener noreferrer"
                                         className="flex items-center justify-center gap-2 py-3 bg-slate-50 dark:bg-slate-700/30 text-blue-600 dark:text-blue-400 text-sm font-bold border-t border-slate-100 dark:border-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors active:scale-[98%]"
                                     >
-                                        <MapPin size={14} /> เปิดแผนที่
+                                        <MapPin size={14} /> {t.openMap}
                                     </a>
                                 )}
                             </div>
@@ -230,7 +231,7 @@ const AttendanceDetailModal = ({
                                     <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-5">
                                         <Camera size={32} strokeWidth={1.5} />
                                     </div>
-                                    <p className="font-bold text-base text-slate-400 dark:text-slate-500">ไม่มีภาพบันทึกเข้า</p>
+                                    <p className="font-bold text-base text-slate-400 dark:text-slate-500">{t.noPhotoIn}</p>
                                 </div>
                             )}
                         </div>
@@ -248,7 +249,7 @@ const AttendanceDetailModal = ({
                                     <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-5">
                                         <Camera size={32} strokeWidth={1.5} />
                                     </div>
-                                    <p className="font-bold text-base text-slate-400 dark:text-slate-500">ไม่มีภาพบันทึกออก</p>
+                                    <p className="font-bold text-base text-slate-400 dark:text-slate-500">{t.noPhotoOut}</p>
                                 </div>
                             )}
                         </div>
@@ -266,16 +267,12 @@ interface EmployeeDashboardProps {
 const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
     const { user, signOut } = useAuth();
     const { t, lang } = useApp();
-    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('employeeDashboardTab') || 'home');
-
-    // Save tab to local storage
-    useEffect(() => {
-        localStorage.setItem('employeeDashboardTab', activeTab);
-    }, [activeTab]);
+    const [activeTab, setActiveTab] = useState('home');
     const [currentView, setCurrentView] = useState('dashboard');
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [todayLogs, setTodayLogs] = useState<AttendanceLog[]>([]);
+    const [recentLeaves, setRecentLeaves] = useState<LeaveRequest[]>([]);
     const [isCheckedIn, setIsCheckedIn] = useState(false);
     const [leaveBalance, setLeaveBalance] = useState({ total: 15, used: 0, remaining: 15 });
     const [workingHours, setWorkingHours] = useState('--:--');
@@ -304,6 +301,8 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
     const [selectedLogDetail, setSelectedLogDetail] = useState<{ in?: AttendanceLog; out?: AttendanceLog } | null>(null);
     const [managerName, setManagerName] = useState<string>('');
+    const [notifications, setNotifications] = useState<AppNotification[]>([]);
+    const [showNotifPanel, setShowNotifPanel] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -312,7 +311,7 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
         if (!file) return;
 
         if (file.size > 2 * 1024 * 1024) {
-            alert(t.fileSizeError || 'File is too large (max 2MB)');
+            showToast(t.fileSizeError || 'File is too large (max 2MB)', 'error');
             return;
         }
 
@@ -355,7 +354,7 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                     videoRef.current.srcObject = stream;
                 }
             } catch (e) {
-                alert("Cannot access camera. Please allow camera permissions.");
+                showToast("Cannot access camera. Please allow camera permissions.", 'error');
                 setShowCamera(false);
             }
         }
@@ -393,13 +392,13 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
 
     const capturePhoto = () => {
         if (attendanceType === 'site_in' && !locationNote.trim()) {
-            alert("Please enter the Site/Client Name");
+            showToast("Please enter the Site/Client Name", 'error');
             return;
         }
 
         if (!locationNote.trim()) {
             if (attendanceType === 'check_in' || attendanceType === 'check_out') {
-                alert("Please verify your location name");
+                showToast("Please verify your location name", 'error');
                 return;
             }
         }
@@ -509,14 +508,23 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
             }
 
             // Get leave balance
-            const { data: leaveRequests } = await supabase
+            const { data: allUserLeaves } = await supabase
                 .from('leave_requests')
                 .select('*')
                 .eq('user_id', user!.id)
-                .eq('status', 'approved');
+                .order('created_at', { ascending: false });
 
-            const used = (leaveRequests || []).length;
-            setLeaveBalance({ total: 15, used, remaining: 15 - used });
+            const approvedCount = (allUserLeaves || []).filter(r => r.status === 'approved').length;
+            setLeaveBalance({ total: 15, used: approvedCount, remaining: 15 - approvedCount });
+            setRecentLeaves((allUserLeaves || []).slice(0, 5));
+
+            // Fetch notifications
+            const { data: notifs } = await supabase.from('notifications')
+                .select('*')
+                .eq('user_id', user!.id)
+                .order('created_at', { ascending: false })
+                .limit(20);
+            if (notifs) setNotifications(notifs as AppNotification[]);
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -530,8 +538,12 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
         setShowCamera(true);
     };
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const submitAttendance = async (photo: string) => {
+        if (isSubmitting) return; // Concurrency guard
         try {
+            setIsSubmitting(true);
             setLoading(true);
 
             // Get GPS location
@@ -564,13 +576,14 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
             if (error) throw error;
 
             setShowCamera(false);
-            fetchDashboardData();
-            alert(t.attendanceSuccess);
+            await fetchDashboardData();
+            showToast(t.attendanceSuccess, 'success');
 
         } catch (error: any) {
             console.error('Error submitting attendance:', error);
-            alert(`${t.attendanceFailed} ${error.message}`);
+            showToast(`${t.attendanceFailed} ${error.message}`, 'error');
         } finally {
+            setIsSubmitting(false);
             setLoading(false);
         }
     };
@@ -602,10 +615,10 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
 
             setProfile({ ...profile, ...profileForm } as Profile);
             setIsEditingProfile(false);
-            alert(t.profileUpdateSuccess || 'Profile updated successfully');
+            showToast(t.profileUpdateSuccess || 'Profile updated successfully', 'success');
         } catch (error: any) {
             console.error('Error updating profile:', error);
-            alert(`${t.errorUpdatingProfile || 'Error updating profile'}: ${error.message}`);
+            showToast(`${t.errorUpdatingProfile || 'Error updating profile'}: ${error.message}`, 'error');
         } finally {
             setIsSavingProfile(false);
         }
@@ -614,11 +627,11 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
     const handleChangePassword = async () => {
         try {
             if (pwForm.newPassword !== pwForm.confirmPassword) {
-                alert(t.passwordNotMatch);
+                showToast(t.passwordNotMatch, 'error');
                 return;
             }
             if (pwForm.newPassword.length < 6) {
-                alert(t.passwordMinLength);
+                showToast(t.passwordMinLength, 'error');
                 return;
             }
 
@@ -629,11 +642,11 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
 
             if (error) throw error;
 
-            alert(t.changePasswordSuccessAlert);
+            showToast(t.changePasswordSuccessAlert, 'success');
             setShowChangePassword(false);
             setPwForm({ newPassword: '', confirmPassword: '' });
         } catch (err: any) {
-            alert(`${t.errorUpdatingPassword} ${err.message}`);
+            showToast(`${t.errorUpdatingPassword} ${err.message}`, 'error');
         } finally {
             setPwLoading(false);
         }
@@ -641,6 +654,10 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
 
     if (currentView === 'leave-request') {
         return <LeaveRequestPage onBack={() => setCurrentView('dashboard')} />;
+    }
+
+    if (currentView === 'payslip') {
+        return <EmployeePayslipView userId={user!.id} onBack={() => setCurrentView('dashboard')} />;
     }
 
     if (loading && !profile) {
@@ -657,7 +674,8 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
     }
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] flex flex-col font-sans selection:bg-indigo-100 dark:selection:bg-indigo-500/30">
+        <div className="bg-slate-100 dark:bg-slate-950 flex justify-center selection:bg-indigo-100 dark:selection:bg-indigo-500/30">
+            <div className="w-full lg:max-w-7xl bg-[#f8fafc] dark:bg-[#0f172a] flex flex-col font-sans h-[100dvh] relative md:shadow-[0_0_40px_rgba(0,0,0,0.1)] dark:md:shadow-[0_0_40px_rgba(0,0,0,0.5)] lg:border-l lg:border-r border-slate-200 dark:border-slate-800 overflow-hidden">
             {/* Camera Overlay Modal */}
             {showCamera && (
                 <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col animate-fadeIn overflow-y-auto scrollbar-hide">
@@ -721,11 +739,15 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                             )}
 
                             <div className="flex justify-center pt-2 pb-1 text-center flex-col items-center">
-                                <button onClick={capturePhoto} className="w-20 h-20 rounded-full bg-white dark:bg-slate-800 border-[3px] border-slate-200 dark:border-slate-600 flex items-center justify-center active:scale-95 transition-all shadow-md hover:shadow-lg hover:border-indigo-300 dark:hover:border-indigo-500 group mb-3">
-                                    <div className="w-[56px] h-[56px] rounded-full bg-slate-900 dark:bg-white group-hover:scale-95 transition-transform"></div>
+                                <button 
+                                    onClick={capturePhoto} 
+                                    disabled={loading || isSubmitting}
+                                    className={`w-20 h-20 rounded-full bg-white dark:bg-slate-800 border-[3px] border-slate-200 dark:border-slate-600 flex items-center justify-center active:scale-95 transition-all shadow-md hover:shadow-lg hover:border-indigo-300 dark:hover:border-indigo-500 group mb-3 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    <div className={`w-[56px] h-[56px] rounded-full bg-slate-900 dark:bg-white group-hover:scale-95 transition-transform ${(loading || isSubmitting) ? 'animate-pulse' : ''}`}></div>
                                 </button>
                                 <p className="text-slate-500 dark:text-slate-400 text-base font-medium">
-                                    {attendanceType === 'site_in' ? t.enterSiteName : t.takeSelfie}
+                                    {isSubmitting ? (t.saving || 'กำลังบันทึก...') : (attendanceType === 'site_in' ? t.enterSiteName : t.takeSelfie)}
                                 </p>
                             </div>
                         </div>
@@ -745,12 +767,12 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                         className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10"
                         onClick={(e) => e.stopPropagation()}
                     />
-                    <p className="text-white/60 mt-6 font-medium tracking-wide">Tap anywhere to close</p>
+                    <p className="text-white/60 mt-6 font-medium tracking-wide">{t.tapToClose}</p>
                 </div>
             )}
 
             {/* Header */}
-            <header className="px-5 pt-4 pb-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-b-[2rem] shadow-sm border-b border-slate-200/50 dark:border-slate-700/50 z-10 flex justify-between items-center relative gap-2">
+            <header className="px-5 pt-4 pb-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shrink-0 rounded-b-[2rem] shadow-sm border-b border-slate-200/50 dark:border-slate-700/50 z-50 flex justify-between items-center relative gap-2">
                 <div className="flex items-center gap-4">
                     <div className="w-[3.5rem] h-[3.5rem] rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 p-[3px] cursor-pointer shadow-md hover:shadow-lg transition-all hover:scale-105 shrink-0" onClick={handleAvatarClick} title="Profile">
                         <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} alt="Profile" className="w-full h-full rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-900 object-cover" />
@@ -764,6 +786,30 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                 </div>
                 <div className="flex gap-2 items-center shrink-0">
                     <SettingsToolbar />
+                    <div className="relative">
+                        <button onClick={() => setShowNotifPanel(!showNotifPanel)} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm border border-slate-200 dark:border-slate-700 relative">
+                            <Bell size={18} strokeWidth={2.5} />
+                            {notifications.filter(n => !n.is_read).length > 0 && <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 text-[10px] text-white font-bold rounded-full flex items-center justify-center border border-white dark:border-slate-900">{notifications.filter(n => !n.is_read).length}</span>}
+                        </button>
+                        {showNotifPanel && (
+                            <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200/50 dark:border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl z-50">
+                                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center"><span className="font-bold text-sm text-slate-800 dark:text-white">🔔 {t.notifications || 'การแจ้งเตือน'}</span>
+                                    <button onClick={async () => { const unread = notifications.filter(n => !n.is_read).map(n => n.id); if (unread.length > 0) { await supabase.from('notifications').update({ is_read: true }).in('id', unread); setNotifications(prev => prev.map(n => ({ ...n, is_read: true }))); } }} className="text-xs font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400">{t.readAll || 'อ่านทั้งหมด'}</button>
+                                </div>
+                                <div className="max-h-80 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800 scrollbar-hide">
+                                    {notifications.length === 0 && <p className="p-8 text-center text-slate-400 font-bold text-sm">{t.noNotifications || 'ไม่มีการแจ้งเตือน'}</p>}
+                                    {notifications.map(n => (
+                                        <div key={n.id} className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer ${!n.is_read ? 'bg-indigo-50/50 dark:bg-indigo-500/5 border-l-[3px] border-indigo-500' : 'border-l-[3px] border-transparent'}`}
+                                            onClick={async () => { if (!n.is_read) { await supabase.from('notifications').update({ is_read: true }).eq('id', n.id); setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x)); } }}>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-tight mb-1">{n.title}</p>
+                                            {n.message && <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed">{n.message}</p>}
+                                            <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-2">{new Date(n.created_at).toLocaleString(lang === 'th' ? 'th-TH' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     {(['admin', 'hr', 'manager'].includes((profile?.role || '').toLowerCase())) && (
                         <button onClick={() => onNavigate('admin-dashboard')} className="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/30 transition-all active:scale-95 shadow-sm border border-indigo-100 dark:border-indigo-500/20" title="Admin Panel">
                             <Shield size={18} strokeWidth={2.5} />
@@ -773,11 +819,12 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto px-5 pb-36 pt-3 scrollbar-hide">
+            <main className="flex-1 overflow-y-auto px-5 pt-3 pb-8 scrollbar-hide">
 
                 {/* HOME TAB */}
                 {activeTab === 'home' && (
-                    <div className="animate-fadeIn space-y-6">
+                    <div className="animate-fadeIn grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+                        <div className="lg:col-span-7 space-y-6">
                         {/* Status Card */}
                         <div className="bg-white dark:bg-slate-800/80 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-slate-100 dark:border-slate-700/50 relative overflow-hidden backdrop-blur-md">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
@@ -800,28 +847,28 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-4 divide-x divide-slate-100 dark:divide-slate-700/50 border-t border-slate-100 dark:border-slate-700/50 pt-5 mt-2 relative z-10 bg-slate-50/50 dark:bg-slate-900/30 -mx-6 -mb-6 px-6 pb-6 rounded-b-[2.5rem]">
-                                <div className="text-center px-1">
-                                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-widest">{t.inTime}</p>
-                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{todayLogs.find(l => l.type === 'check_in')?.timestamp ? new Date(todayLogs.find(l => l.type === 'check_in')!.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-slate-100 dark:divide-slate-700/50 border-t border-slate-100 dark:border-slate-700/50 pt-5 mt-2 relative z-10 bg-slate-50/50 dark:bg-slate-900/30 -mx-6 -mb-6 px-6 pb-6 rounded-b-[2.5rem]">
+                                <div className="text-center px-1 py-2 sm:py-0">
+                                    <p className="text-[11px] sm:text-sm font-bold text-slate-500 dark:text-slate-400 mb-1 sm:mb-1.5 uppercase tracking-widest">{t.inTime}</p>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm sm:text-base">{todayLogs.find(l => l.type === 'check_in')?.timestamp ? new Date(todayLogs.find(l => l.type === 'check_in')!.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</p>
                                 </div>
-                                <div className="text-center px-1">
-                                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-widest">{t.outTime}</p>
-                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{todayLogs.find(l => l.type === 'check_out')?.timestamp ? new Date(todayLogs.find(l => l.type === 'check_out')!.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</p>
+                                <div className="text-center px-1 py-2 sm:py-0">
+                                    <p className="text-[11px] sm:text-sm font-bold text-slate-500 dark:text-slate-400 mb-1 sm:mb-1.5 uppercase tracking-widest">{t.outTime}</p>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm sm:text-base">{todayLogs.find(l => l.type === 'check_out')?.timestamp ? new Date(todayLogs.find(l => l.type === 'check_out')!.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</p>
                                 </div>
-                                <div className="text-center px-1">
-                                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-widest">{t.workingHrs}</p>
-                                    <p className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">{workingHours}</p>
+                                <div className="text-center px-1 py-2 sm:py-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700/30 sm:border-none">
+                                    <p className="text-[11px] sm:text-sm font-bold text-slate-500 dark:text-slate-400 mb-1 sm:mb-1.5 uppercase tracking-widest">{t.workingHrs}</p>
+                                    <p className="font-bold text-indigo-600 dark:text-indigo-400 text-sm sm:text-base">{workingHours}</p>
                                 </div>
-                                <div className="text-center px-1">
-                                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-widest">{t.distance}</p>
-                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{todayDistance > 0 ? todayDistance.toFixed(1) : '0'} <span className="text-sm text-slate-500 font-semibold">km</span></p>
+                                <div className="text-center px-1 py-2 sm:py-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700/30 sm:border-none">
+                                    <p className="text-[11px] sm:text-sm font-bold text-slate-500 dark:text-slate-400 mb-1 sm:mb-1.5 uppercase tracking-widest">{t.distance}</p>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm sm:text-base">{todayDistance > 0 ? todayDistance.toFixed(1) : '0'} <span className="text-[11px] text-slate-500 font-semibold uppercase">km</span></p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                             <button onClick={() => initiateAttendance('site_in')} className="bg-white dark:bg-slate-800 p-4 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.2)] border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center gap-3 hover:bg-orange-50 dark:hover:bg-slate-700/50 transition-all group active:scale-95">
                                 <div className="w-14 h-14 rounded-[1.2rem] bg-orange-50 dark:bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-105 transition-transform border border-orange-100 dark:border-orange-500/20 shadow-sm"><Briefcase size={24} strokeWidth={2.5} /></div>
                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: t.siteArrival.split(' ').join('<br />') }}></span>
@@ -830,7 +877,7 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                                 <div className="w-14 h-14 rounded-[1.2rem] bg-blue-50 dark:bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-105 transition-transform border border-blue-100 dark:border-blue-500/20 shadow-sm"><Building size={24} strokeWidth={2.5} /></div>
                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: t.siteDeparture.split(' ').join('<br />') }}></span>
                             </button>
-                            <button onClick={() => alert(t.payslip + ' - ' + t.comingSoon)} className="bg-white dark:bg-slate-800 p-4 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.2)] border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center gap-3 hover:bg-emerald-50 dark:hover:bg-slate-700/50 transition-all group active:scale-95">
+                            <button onClick={() => setCurrentView('payslip')} className="bg-white dark:bg-slate-800 p-4 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.2)] border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center gap-3 hover:bg-emerald-50 dark:hover:bg-slate-700/50 transition-all group active:scale-95">
                                 <div className="w-14 h-14 rounded-[1.2rem] bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-105 transition-transform border border-emerald-100 dark:border-emerald-500/20 shadow-sm"><FileText size={24} strokeWidth={2.5} /></div>
                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: t.payslip.split(' ').join('<br />') }}></span>
                             </button>
@@ -842,8 +889,10 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                                 <span className="text-sm font-bold text-indigo-800 dark:text-indigo-300 tracking-wide">{t.shift}: {profile.work_shifts.start_time?.slice(0, 5)} - {profile.work_shifts.end_time?.slice(0, 5)}</span>
                             </div>
                         )}
+                        </div>
 
-                        <div className="mt-8 pt-2">
+                        <div className="lg:col-span-5 space-y-8">
+                        <div className="mt-0 lg:mt-0">
                             <div className="flex justify-between items-center mb-5 px-2">
                                 <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">{t.recentActivity}</h3>
                                 <button onClick={() => setActiveTab('calendar')} className="text-[13px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 px-4 py-2 rounded-full transition-colors active:scale-95">{t.viewAll}</button>
@@ -947,6 +996,46 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                                     });
                                 })()}
                             </div>
+                        </div>
+
+                        {/* Recent Leaves Status */}
+                        {recentLeaves.length > 0 && (
+                            <div className="mt-8 pt-2">
+                                <div className="flex justify-between items-center mb-5 px-2">
+                                    <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">สถานะการลาล่าสุด</h3>
+                                    <button onClick={() => setActiveTab('leave')} className="text-[13px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 px-4 py-2 rounded-full transition-colors active:scale-95">{t.viewAll}</button>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    {recentLeaves.map(leave => (
+                                        <div key={leave.id} className="bg-white dark:bg-slate-800 rounded-[1.5rem] p-4.5 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:border-purple-200 dark:hover:border-purple-500/30 transition-all">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-[1rem] flex items-center justify-center flex-shrink-0 bg-purple-50/50 text-purple-500 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-100 dark:border-purple-500/20`}>
+                                                    <Calendar size={20} strokeWidth={2.5} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <h4 className="font-bold text-slate-800 dark:text-slate-200 capitalize text-sm">{leave.leave_type}</h4>
+                                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                                            leave.status === 'approved' ? 'bg-emerald-500 text-white' : 
+                                                            leave.status === 'rejected' ? 'bg-rose-500 text-white' : 
+                                                            'bg-amber-500 text-white'
+                                                        }`}>
+                                                            {leave.status === 'approved' ? t.approved : leave.status === 'pending_manager' ? 'รอหัวหน้าอนุมัติ' : leave.status === 'pending' ? 'รอ HR อนุมัติ' : leave.status}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 font-medium tracking-wide">
+                                                        <span className="font-mono bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md text-xs font-bold">
+                                                            {new Date(leave.start_date).toLocaleDateString('th-TH', {day:'numeric', month:'short'})} - {new Date(leave.end_date).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}
+                                                        </span>
+                                                        <span className="truncate italic">"{leave.reason}"</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         </div>
                     </div>
                 )}
@@ -1189,7 +1278,7 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
             </main>
 
             {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 w-full bg-white/98 dark:bg-slate-800/98 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-700/50 rounded-t-[2.5rem] px-1 py-3 flex justify-around items-center z-20 shadow-[0_-15px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_-5px_40px_rgba(0,0,0,0.5)] pb-safe">
+            <nav className="w-full shrink-0 mt-auto bg-white/98 dark:bg-slate-800/98 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-700/50 md:rounded-b-none rounded-t-[2.5rem] px-1 py-3 flex justify-around items-center z-50 shadow-[0_-15px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_-5px_40px_rgba(0,0,0,0.5)] pb-safe relative">
                 <button onClick={() => { setActiveTab('home'); setCurrentView('dashboard'); }} className={`flex flex-col items-center gap-1 w-20 transition-all relative py-1.5 rounded-2xl ${activeTab === 'home' && currentView === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/70 dark:bg-indigo-500/15' : 'text-slate-400'}`} title={t.home}>
                     <MapPin size={28} className={`${activeTab === 'home' && currentView === 'dashboard' ? 'scale-110' : ''}`} strokeWidth={activeTab === 'home' && currentView === 'dashboard' ? 3 : 2.5} />
                     <span className="text-[14px] font-black tracking-tighter leading-none">{t.home}</span>
@@ -1223,6 +1312,7 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                     lang={lang}
                 />
             )}
+            </div>
         </div>
     );
 };
@@ -1385,8 +1475,10 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
     const { t } = useApp();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [logs, setLogs] = useState<AttendanceLog[]>([]);
+    const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedDayLogs, setSelectedDayLogs] = useState<AttendanceLog[]>([]);
+    const [selectedDayLeaves, setSelectedDayLeaves] = useState<LeaveRequest[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
     useEffect(() => {
@@ -1397,17 +1489,27 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
 
     const fetchMonthLogs = async () => {
         setLoading(true);
-        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
-        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59).toISOString();
+        // Use YYYY-MM-DD for cleaner database comparison with 'date' type columns
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toLocaleDateString('en-CA');
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toLocaleDateString('en-CA');
 
-        const { data } = await supabase.from('attendance_logs')
-            .select('*')
-            .eq('user_id', userId!)
-            .gte('timestamp', startOfMonth)
-            .lte('timestamp', endOfMonth)
-            .order('timestamp', { ascending: true });
+        const [logRes, leaveRes] = await Promise.all([
+            supabase.from('attendance_logs')
+                .select('*')
+                .eq('user_id', userId!)
+                .gte('timestamp', `${startOfMonth}T00:00:00`)
+                .lte('timestamp', `${endOfMonth}T23:59:59`)
+                .order('timestamp', { ascending: true }),
+            supabase.from('leave_requests')
+                .select('*')
+                .eq('user_id', userId!)
+                .or(`status.eq.approved,status.eq.pending,status.eq.pending_manager`)
+                .filter('end_date', 'gte', startOfMonth)
+                .filter('start_date', 'lte', endOfMonth)
+        ]);
 
-        if (data) setLogs(data as AttendanceLog[]);
+        if (logRes.data) setLogs(logRes.data as AttendanceLog[]);
+        if (leaveRes.data) setLeaves(leaveRes.data as LeaveRequest[]);
         setLoading(false);
     };
 
@@ -1416,8 +1518,15 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
             const dateStr = selectedDate.toLocaleDateString('en-CA');
             const dayLogs = logs.filter(l => new Date(l.timestamp).toLocaleDateString('en-CA') === dateStr);
             setSelectedDayLogs(dayLogs);
+            
+            const dayLeaves = leaves.filter(l => {
+                const startStr = new Date(l.start_date).toLocaleDateString('en-CA');
+                const endStr = new Date(l.end_date).toLocaleDateString('en-CA');
+                return dateStr >= startStr && dateStr <= endStr;
+            });
+            setSelectedDayLeaves(dayLeaves);
         }
-    }, [selectedDate, logs]);
+    }, [selectedDate, logs, leaves]);
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
@@ -1480,16 +1589,16 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
     };
 
     return (
-        <div className="animate-fadeIn pb-24 h-full flex flex-col">
-            <div className="flex flex-col lg:flex-row bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden flex-1">
+        <div className="animate-fadeIn pb-24 flex flex-col items-center overflow-y-auto">
+            <div className="flex flex-col lg:flex-row bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden w-full max-w-5xl">
 
                 {/* PART 1: LEFT SIDEBAR (Year & Months) */}
-                <div className="w-full lg:w-40 bg-[#00897b] text-white flex flex-col shrink-0">
-                    <div className="p-4 lg:p-5 flex flex-col h-full">
-                        <div className="flex items-center justify-between mb-4 lg:mb-6">
-                            <button onClick={() => changeYear(-1)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><ChevronLeft size={18} /></button>
-                            <span className="text-xl font-black tracking-tighter">{currentDate.getFullYear()}</span>
-                            <button onClick={() => changeYear(1)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><ChevronRight size={18} /></button>
+                <div className="w-full lg:w-32 bg-[#00897b] text-white flex flex-col shrink-0">
+                    <div className="p-4 lg:p-4 flex flex-col h-full">
+                        <div className="flex items-center justify-between mb-4 lg:mb-4">
+                            <button onClick={() => changeYear(-1)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><ChevronLeft size={16} /></button>
+                            <span className="text-lg font-black tracking-tighter">{currentDate.getFullYear()}</span>
+                            <button onClick={() => changeYear(1)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><ChevronRight size={16} /></button>
                         </div>
 
                         <div className="space-y-0.5 overflow-x-auto lg:overflow-x-visible flex lg:flex-col pb-2 lg:pb-0 scrollbar-hide flex-1">
@@ -1508,28 +1617,38 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                 </div>
 
                 {/* PART 2: MIDDLE (Calendar Grid) */}
-                <div className="flex-1 p-4 lg:p-6 flex flex-col border-r border-slate-50 dark:border-slate-700/50 min-w-0">
-                    <div className="flex flex-col items-center mb-6">
+                <div className="flex-1 p-3 lg:p-4 flex flex-col border-r border-slate-50 dark:border-slate-700/50 min-w-0">
+                    <div className="flex flex-col items-center mb-4">
                         <div className="flex items-center gap-3 text-[#00897b] dark:text-teal-400">
-                            <ChevronLeft size={18} className="opacity-40" />
-                            <h3 className="text-xl font-black tracking-tight">{months[currentDate.getMonth()]}</h3>
-                            <ChevronRight size={18} className="opacity-40" />
+                            <button 
+                                onClick={() => selectMonth((currentDate.getMonth() - 1 + 12) % 12)}
+                                className="p-1.5 hover:bg-teal-50 dark:hover:bg-teal-500/10 rounded-full transition-all active:scale-90"
+                            >
+                                <ChevronLeft size={18} strokeWidth={3} />
+                            </button>
+                            <h3 className="text-xl font-black tracking-tight min-w-[100px] text-center">{months[currentDate.getMonth()]}</h3>
+                            <button 
+                                onClick={() => selectMonth((currentDate.getMonth() + 1) % 12)}
+                                className="p-1.5 hover:bg-teal-50 dark:hover:bg-teal-500/10 rounded-full transition-all active:scale-90"
+                            >
+                                <ChevronRight size={18} strokeWidth={3} />
+                            </button>
                         </div>
-                        <div className="w-10 h-1 bg-[#00897b]/20 rounded-full mt-1.5"></div>
+                        <div className="w-8 h-1 bg-[#00897b]/20 rounded-full mt-1.5"></div>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 mb-3">
+                    <div className="grid grid-cols-7 gap-1 mb-2">
                         {weekDays.map(d => (
-                            <div key={d.key} className={`text-center text-xs lg:text-sm font-black uppercase tracking-widest ${d.isSun ? 'text-rose-500' : 'text-slate-400'}`}>
+                            <div key={d.key} className={`text-center text-[10px] lg:text-xs font-black uppercase tracking-tighter ${d.isSun ? 'text-rose-500' : 'text-slate-400'}`}>
                                 {d.label}
                             </div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 lg:gap-3 flex-1 content-start">
+                    <div className="grid grid-cols-7 gap-1 lg:gap-1.5 flex-1 content-start">
                         {/* 1. EMPTY SPACES FOR PREVIOUS MONTH */}
                         {Array.from({ length: firstDay }).map((_, i) => (
-                            <div key={`empty-prev-${i}`} className="aspect-square"></div>
+                            <div key={`empty-prev-${i}`} className="aspect-square lg:aspect-auto lg:h-12"></div>
                         ))}
 
                         {/* 2. CURRENT MONTH DAYS */}
@@ -1538,7 +1657,13 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                             const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
                             const dateStr = date.toLocaleDateString('en-CA');
                             const dayLogs = logs.filter(l => new Date(l.timestamp).toLocaleDateString('en-CA') === dateStr);
+                            const dayLeaves = leaves.filter(l => {
+                                const startStr = new Date(l.start_date).toLocaleDateString('en-CA');
+                                const endStr = new Date(l.end_date).toLocaleDateString('en-CA');
+                                return dateStr >= startStr && dateStr <= endStr;
+                            });
                             const hasLogs = dayLogs.length > 0;
+                            const hasLeaves = dayLeaves.length > 0;
                             const isSelected = selectedDate?.toLocaleDateString('en-CA') === dateStr;
                             const isToday = new Date().toLocaleDateString('en-CA') === dateStr;
 
@@ -1551,8 +1676,9 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                                 <button
                                     key={day}
                                     onClick={() => setSelectedDate(date)}
-                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all active:scale-95 group ${isSelected ? 'bg-[#00897b] text-white shadow-xl shadow-teal-500/20' :
+                                    className={`aspect-square lg:aspect-auto lg:h-12 rounded-xl flex flex-col items-center justify-center relative transition-all active:scale-95 group ${isSelected ? 'bg-[#00897b] text-white shadow-xl shadow-teal-500/20' :
                                         isToday ? 'bg-teal-50 border border-teal-100 text-[#00897b] font-black' :
+                                            hasLeaves ? 'bg-purple-50 border border-purple-100 text-purple-600 font-bold' :
                                             isHoliday ? 'bg-orange-50 border border-orange-100 text-orange-600 font-bold' :
                                                 'hover:bg-slate-50 text-slate-600 font-medium'
                                         }`}
@@ -1565,7 +1691,8 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                                                 {checkOutLogs.length > 0 && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/70' : 'bg-purple-400'}`}></div>}
                                             </>
                                         )}
-                                        {isHoliday && !isSelected && <div className="w-1 h-1 rounded-full bg-orange-400"></div>}
+                                        {hasLeaves && !isSelected && <div className="w-1 h-1 rounded-full bg-purple-500"></div>}
+                                        {isHoliday && !isSelected && !hasLeaves && <div className="w-1 h-1 rounded-full bg-orange-400"></div>}
                                     </div>
                                 </button>
                             );
@@ -1574,7 +1701,7 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                 </div>
 
                 {/* PART 3: RIGHT (Details & Timeline) */}
-                <div className="w-full lg:w-80 p-6 lg:p-8 shrink-0 bg-white dark:bg-slate-800/50 overflow-y-auto max-h-[500px] lg:max-h-full scrollbar-hide border-l border-slate-50 dark:border-slate-700/30">
+                <div className="w-full lg:w-[380px] p-5 lg:p-6 shrink-0 bg-white dark:bg-slate-800/50 overflow-y-auto max-h-[500px] lg:max-h-full scrollbar-hide border-l border-slate-50 dark:border-slate-700/30">
                     {selectedDate ? (
                         <div className="animate-fadeIn">
                             <div className="mb-6">
@@ -1588,7 +1715,7 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                                 )}
                             </div>
 
-                            {selectedDayLogs.length === 0 ? (
+                            {selectedDayLogs.length === 0 && selectedDayLeaves.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-slate-400 opacity-50 space-y-4">
                                     {!holidays2026[selectedDate.toLocaleDateString('en-CA')] ? (
                                         <>
@@ -1612,6 +1739,31 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                                 <div className="space-y-0 relative">
                                     {/* Vertical Line */}
                                     <div className="absolute left-[7px] top-2 bottom-6 w-[1.5px] bg-slate-100 dark:bg-slate-700/50"></div>
+                                    
+                                    {/* LEAVES */}
+                                    {selectedDayLeaves.map(leave => (
+                                        <div key={`leave-${leave.id}`} className="cursor-pointer group relative pl-8 pb-10 last:pb-2 transition-all">
+                                            <div className="absolute left-0 top-1.5 w-[15px] h-[15px] rounded-full border-[3px] border-white dark:border-slate-800 z-10 shadow-sm bg-purple-500"></div>
+                                            <div className="flex flex-col gap-2 p-3 -mt-3 -ml-3 rounded-2xl group-hover:bg-black/5 dark:group-hover:bg-white/5 transition-colors">
+                                                <div className="flex items-start justify-between">
+                                                    <h4 className="text-base font-black text-purple-600 dark:text-purple-400 capitalize">
+                                                        {leave.leave_type} (อนุมัติแล้ว)
+                                                    </h4>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
+                                                    <Calendar size={14} />
+                                                    <span className="font-mono text-[14px]">
+                                                        {new Date(leave.start_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} - {new Date(leave.end_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                                                    </span>
+                                                </div>
+                                                {leave.reason && (
+                                                    <div className="flex items-start gap-2 text-[13px] text-slate-400 font-bold leading-relaxed mt-1">
+                                                        <span>{leave.reason}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
 
                                     {(() => {
                                         // Specific pairing for current day selection
@@ -1689,9 +1841,9 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                             )}
                         </div>
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center p-8">
-                            <h4 className="text-lg font-black text-slate-700 dark:text-white mb-6 w-full text-left flex items-center gap-2">
-                                <Calendar size={20} className="text-[#00897b]" /> {t.allHolidays}
+                        <div className="h-full flex flex-col items-start p-2">
+                            <h4 className="text-xl font-black text-slate-700 dark:text-white mb-6 w-full text-left flex items-center gap-2">
+                                <Calendar size={22} className="text-[#00897b]" strokeWidth={2.5} /> {t.allHolidays}
                             </h4>
                             <div className="w-full space-y-3 overflow-y-auto pr-2 custom-scrollbar">
                                 {Object.entries(holidays2026)

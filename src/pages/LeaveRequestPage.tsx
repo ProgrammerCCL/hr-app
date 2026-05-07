@@ -17,6 +17,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
     const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
     const [loading, setLoading] = useState(false);
     const [requests, setRequests] = useState<LeaveRequest[]>([]);
+    const [profileData, setProfileData] = useState<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form State
@@ -41,10 +42,14 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
     }, [user]);
 
     const fetchLeaveTypes = async () => {
-        const { data } = await supabase.from('leave_types').select('*').eq('is_active', true).order('sort_order');
-        if (data && data.length > 0) {
+        const { data, error } = await supabase.from('leave_types').select('*').eq('is_active', true).order('sort_order');
+        if (error) {
+            console.error('Error fetching leave types:', error);
+            return;
+        }
+        if (data) {
             setLeaveTypes(data as LeaveType[]);
-            setLeaveType(data[0].name);
+            if (data.length > 0) setLeaveType(data[0].name);
         }
     };
 
@@ -58,6 +63,10 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
 
             if (error) throw error;
             if (data) setRequests(data as LeaveRequest[]);
+            
+            // Also fetch basic profile once for display
+            const { data: pData } = await supabase.from('profiles').select('role, first_name, last_name').eq('id', user!.id).single();
+            if (pData) setProfileData(pData);
         } catch (error) {
             console.error('Error fetching requests:', error);
         }
@@ -106,7 +115,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
 
         // Check file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert(t.fileSizeError);
+            showToast(t.fileSizeError, 'error');
             return;
         }
 
@@ -129,7 +138,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
     };
 
     const handleCancelLeave = async (id: string) => {
-        if (!confirm("คุณต้องการยกเลิกใบลาใบนี้ใช่หรือไม่?")) return;
+        if (!confirm(t.deleteConfirm)) return;
 
         setLoading(true);
         try {
@@ -142,7 +151,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
             fetchLeaveRequests();
         } catch (error: any) {
             console.error('Error cancelling leave:', error);
-            alert('ไม่สามารถยกเลิกได้: ' + error.message);
+            showToast('ไม่สามารถยกเลิกได้: ' + error.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -164,7 +173,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
                 if (attachmentFile.type.startsWith('image/') && attachmentPreview) {
                     return attachmentPreview; // Use base64 as fallback
                 }
-                alert('ไม่สามารถอัพโหลดไฟล์ได้: ' + error.message + '\n\nอาจต้องสร้าง Storage Bucket "leave-attachments" ใน Supabase ก่อน');
+                showToast('ไม่สามารถอัพโหลดไฟล์ได้: ' + error.message + '\n\nอาจต้องสร้าง Storage Bucket "leave-attachments" ใน Supabase ก่อน', 'error');
                 return null;
             }
 
@@ -188,12 +197,12 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!startDate || !endDate || !reason.trim()) {
-            alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+            showToast(t.pleaseFillAll, 'error');
             return;
         }
 
         if (new Date(endDate) < new Date(startDate)) {
-            alert("วันสิ้นสุดต้องไม่ก่อนวันเริ่ม");
+            showToast(t.invalidDateRange, 'error');
             return;
         }
 
@@ -206,12 +215,15 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
         const diffDays = Math.ceil(diffTime / (86400000));
 
         if (selectedTypeConfig) {
-            if (selectedTypeConfig.min_advance > 0 && diffDays < selectedTypeConfig.min_advance) {
-                alert(`⚠️ ประเภทการลานี้ต้องลาล่วงหน้าอย่างน้อย ${selectedTypeConfig.min_advance} วัน`);
+            const minAdvance = selectedTypeConfig.min_advance || selectedTypeConfig.advance_days || 0;
+            const maxBackdated = selectedTypeConfig.max_backdated || (selectedTypeConfig.allow_retroactive ? 30 : 0);
+            
+            if (minAdvance > 0 && diffDays < minAdvance) {
+                showToast(`⚠️ ประเภทการลานี้ต้องลาล่วงหน้าอย่างน้อย ${minAdvance} วัน`, 'error');
                 return;
             }
-            if (selectedTypeConfig.max_backdated > 0 && diffDays < -selectedTypeConfig.max_backdated) {
-                alert(`⚠️ ประเภทการลานี้ไม่อนุญาตให้ลาย้อนหลังเกิน ${selectedTypeConfig.max_backdated} วัน`);
+            if (maxBackdated > 0 && diffDays < -maxBackdated) {
+                showToast(`⚠️ ประเภทการลานี้ไม่อนุญาตให้ลาย้อนหลังเกิน ${maxBackdated} วัน`, 'error');
                 return;
             }
         }
@@ -225,14 +237,18 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
             }
 
             // Fetch profile data to determine status
-            const { data: profileData } = await supabase.from('profiles').select('first_name, last_name, role, manager_id').eq('id', user!.id).single();
-            const requesterName = profileData ? `${profileData.first_name} ${profileData.last_name || ''}`.trim() : t.employee;
+            const { data: pData } = await supabase.from('profiles').select('first_name, last_name, role, manager_id').eq('id', user!.id).single();
+            if (pData) setProfileData(pData);
+            const requesterName = pData ? `${pData.first_name} ${pData.last_name || ''}`.trim() : t.employee;
 
             let reqStatus = 'pending';
-            if (profileData?.role === 'admin' || profileData?.role === 'hr') {
+            if (pData?.role === 'admin' || pData?.role === 'hr') {
                 reqStatus = 'approved';
-            } else if (profileData?.role === 'employee' && profileData?.manager_id) {
-                reqStatus = 'pending_manager';
+                if (pData?.manager_id) {
+                    reqStatus = 'pending_manager';
+                } else {
+                    reqStatus = 'pending'; // Fallback direct to HR if no manager
+                }
             }
 
             const { error } = await supabase.from('leave_requests').insert([
@@ -245,7 +261,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
                     reason: durationMode === 'half_day' ? `${reason} (${t.halfDay} ${halfDaySession === 'morning' ? t.am : t.pm})` : durationMode === 'hourly' ? `${reason} (ลารายชั่วโมง ${hourlyStartTime} - ${hourlyEndTime})` : reason,
                     attachment_url: attachmentUrl,
                     status: reqStatus,
-                    approver_id: profileData?.manager_id || null
+                    approver_id: pData?.manager_id || null
                 }
             ]);
 
@@ -253,13 +269,13 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
 
             // === NOTIFY APPROVER ===
             const leaveLabel = leaveTypes.find(lt => lt.name === leaveType)?.label || leaveType;
-            if (reqStatus === 'pending_manager' && profileData?.manager_id) {
+            if (reqStatus === 'pending_manager' && pData?.manager_id) {
                 // Notify Manager
                 await supabase.from('notifications').insert([{
-                    user_id: profileData.manager_id,
+                    user_id: pData.manager_id,
                     type: 'leave_request',
                     title: `📋 ${t.newLeaveRequestTitle}: ${requesterName}`,
-                    message: `${requesterName} ${t.submitted}${lang === 'ja' ? '' : ' '}${leaveLabel} ${startDate} ${t.to} ${durationMode === 'full_day' ? endDate : startDate} (${totalDays} ${t.days})${attachmentUrl ? ` 📎 ${t.attachmentBadge}` : ''} — ${t.waitingForYourApproval}`,
+                    message: `${requesterName} ${t.submitted} ${leaveLabel} ${startDate} ${t.to} ${durationMode === 'full_day' ? endDate : startDate} (${totalDays} ${t.days})${attachmentUrl ? ` 📎 ${t.attachmentBadge}` : ''} — ${t.waitingForYourApproval}`,
                     related_id: null,
                     created_by: user!.id,
                 }]);
@@ -271,7 +287,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
                         user_id: a.id,
                         type: 'leave_request',
                         title: `📋 ${t.newLeaveRequestTitle}: ${requesterName}`,
-                        message: `${requesterName} ${t.submitted}${lang === 'ja' ? '' : ' '}${leaveLabel} ${startDate} ${t.to} ${durationMode === 'full_day' ? endDate : startDate} (${totalDays} ${t.days})${attachmentUrl ? ` 📎 ${t.attachmentBadge}` : ''} — ${t.waitingForHR}`,
+                        message: `${requesterName} ${t.submitted} ${leaveLabel} ${startDate} ${t.to} ${durationMode === 'full_day' ? endDate : startDate} (${totalDays} ${t.days})${attachmentUrl ? ` 📎 ${t.attachmentBadge}` : ''} — ${t.waitingForHR}`,
                         related_id: null,
                         created_by: user!.id,
                     }));
@@ -284,7 +300,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
                 new Notification(t.leaveSubmittedSuccess, { body: `${leaveLabel} ${startDate} - ${durationMode === 'full_day' ? endDate : startDate} (${totalDays} ${t.daysLabel})` });
             }
 
-            alert(`✅ ${t.leaveSubmittedSuccess}\n\n${t.leaveTypeLabel} ${leaveLabel}\n${t.dateLabel} ${startDate} - ${durationMode === 'full_day' ? endDate : startDate}\n${t.amountLabel} ${totalDays} ${t.daysLabel}${attachmentUrl ? `\n📎 ${t.attachedLabel}` : ''}`);
+            showToast(`✅ ${t.leaveSubmittedSuccess}\n\n${t.leaveTypeLabel} ${leaveLabel}\n${t.dateLabel} ${startDate} - ${durationMode === 'full_day' ? endDate : startDate}\n${t.amountLabel} ${totalDays} ${t.daysLabel}${attachmentUrl ? `\n📎 ${t.attachedLabel}` : ''}`, 'success');
             setReason('');
             setStartDate('');
             setEndDate('');
@@ -294,7 +310,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
             fetchLeaveRequests();
 
         } catch (error: any) {
-            alert("Error submitting request: " + error.message);
+            showToast("Error submitting request: " + error.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -322,30 +338,59 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
         return iconMap[name] || '📄';
     };
 
-    const leaveTypeConfig = (leaveTypes.length > 0) ? leaveTypes.map((lt, idx) => ({
+    const leaveTypeConfig = leaveTypes.map((lt, idx) => ({
         id: lt.id || `lt-${idx}`,
         value: lt.name,
         label: (t as any)[lt.name] || lt.label,
         quota: lt.quota_per_year || 0,
         icon: getLeaveIcon(lt.name),
-        min_advance: lt.min_days_advance || 0,
-        max_backdated: lt.max_days_backdated || 0
-    })) : [
-        { id: 'sick', value: 'sick', label: 'ลาป่วย', icon: '🤒', quota: 30, min_advance: 0, max_backdated: 2 },
-        { id: 'personal', value: 'personal', label: 'ลากิจ', icon: '👤', quota: 3, min_advance: 3, max_backdated: 0 },
-        { id: 'unpaid_personal', value: 'unpaid_personal', label: 'ลากิจไม่รับค่าจ้าง', icon: '👤', quota: 999, min_advance: 3, max_backdated: 0 },
-        { id: 'annual', value: 'annual', label: 'ลาพักร้อน', icon: '🏖️', quota: 6, min_advance: 3, max_backdated: 0 },
-        { id: 'ordination', value: 'ordination', label: 'ลาบวช', icon: '🙏', quota: 30, min_advance: 30, max_backdated: 0 },
-        { id: 'maternity', value: 'maternity', label: 'ลาคลอดบุตร', icon: '👶', quota: 30, min_advance: 30, max_backdated: 0 },
-        { id: 'funeral_parents', value: 'funeral_parents', label: 'ลาชาปณกิจ พ่อ แม่', icon: '🕯️', quota: 7, min_advance: 0, max_backdated: 3 },
-        { id: 'funeral_relatives', value: 'funeral_relatives', label: 'ลาชาปณกิจ ญาติพี่น้อง', icon: '🕯️', quota: 3, min_advance: 0, max_backdated: 3 },
-        { id: 'holiday_swap', value: 'holiday_swap', label: 'ลาสลับวันหยุดแทนที่ทำงานในวันหยุด', icon: '🔄', quota: 999, min_advance: 1, max_backdated: 0 },
-        { id: 'sterilization', value: 'sterilization', label: 'ลาทำหมัน', icon: '🏥', quota: 7, min_advance: 1, max_backdated: 0 },
-    ];
+        min_advance: lt.min_days_advance || lt.advance_days || 0,
+        max_backdated: lt.max_days_backdated || (typeof lt.allow_retroactive === 'number' ? lt.allow_retroactive : lt.allow_retroactive ? 30 : 0),
+        advance_days: lt.advance_days || 0,
+        allow_retroactive: lt.allow_retroactive
+    }));
 
     const selectedTypeConfig = leaveTypeConfig.find(lt => lt.value === leaveType);
     const usedDays = getUsedDays(leaveType);
     const remainingDays = (selectedTypeConfig?.quota || 0) - usedDays;
+
+    // Notice Period Validation
+    const getNoticeValidation = () => {
+        if (!startDate || !selectedTypeConfig) return { isValid: true };
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        
+        const diffTime = start.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        const minAdvance = selectedTypeConfig.min_advance || 0;
+        const maxBackdated = selectedTypeConfig.max_backdated || 0;
+        
+        if (minAdvance > 0 && diffDays < minAdvance) {
+            return { 
+                isValid: false, 
+                message: lang === 'th' 
+                    ? `ต้องลาล่วงหน้าอย่างน้อย ${minAdvance} วัน (เร็วที่สุดคือ ${new Date(today.getTime() + minAdvance * 86400000).toLocaleDateString('th-TH')})`
+                    : `Requires ${minAdvance} days advance notice (Earliest: ${new Date(today.getTime() + minAdvance * 86400000).toLocaleDateString('en-GB')})`
+            };
+        }
+        
+        if (diffDays < 0 && Math.abs(diffDays) > maxBackdated) {
+            return {
+                isValid: false,
+                message: lang === 'th'
+                    ? `ลาย้อนหลังได้ไม่เกิน ${maxBackdated} วัน (ย้อนหลังได้ถึง ${new Date(today.getTime() - maxBackdated * 86400000).toLocaleDateString('th-TH')})`
+                    : `Cannot backdate more than ${maxBackdated} days (Up to ${new Date(today.getTime() - maxBackdated * 86400000).toLocaleDateString('en-GB')})`
+            };
+        }
+        
+        return { isValid: true };
+    };
+
+    const noticeValidation = getNoticeValidation();
 
     const getFileIcon = (fileName: string) => {
         const ext = fileName.split('.').pop()?.toLowerCase();
@@ -549,8 +594,13 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
                                             }
                                             if (durationMode !== 'full_day') setEndDate(e.target.value);
                                         }}
-                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 text-slate-900 dark:text-white text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/30 outline-none transition-all shadow-sm"
+                                        className={`w-full bg-white dark:bg-slate-900 border ${!noticeValidation.isValid ? 'border-rose-500 ring-2 ring-rose-200 dark:ring-rose-900/30' : 'border-slate-200 dark:border-slate-700'} rounded-xl p-3.5 text-slate-900 dark:text-white text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/30 outline-none transition-all shadow-sm`}
                                     />
+                                    {!noticeValidation.isValid && (
+                                        <p className="mt-2 text-xs font-bold text-rose-500 flex items-center gap-1 animate-pulse">
+                                            <AlertCircle size={14} /> {noticeValidation.message}
+                                        </p>
+                                    )}
                                 </div>
                                 {durationMode === 'full_day' && (
                                     <div>
@@ -668,7 +718,7 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
 
                             <button
                                 type="submit"
-                                disabled={loading || uploading || !startDate || !endDate || !reason.trim()}
+                                disabled={loading || uploading || !startDate || !endDate || !reason.trim() || !noticeValidation.isValid}
                                 className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-black text-base transition-all hover:shadow-xl hover:shadow-indigo-500/30 active:scale-[98%] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 mt-6 shadow-lg shadow-indigo-500/10"
                             >
                                 {loading || uploading ? (
@@ -692,79 +742,95 @@ const LeaveRequestPage = ({ onBack }: LeaveRequestPageProps) => {
                                 <p className="text-sm font-bold text-slate-500">No leave requests found in history.</p>
                             </div>
                         )}
-                        <div className="flex flex-col gap-4 lg:gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 pb-20">
                             {requests.map((req) => {
                                 const days = calculateRequestDays(req);
+                                const typeInfo = leaveTypeConfig.find(lt => lt.value === req.leave_type);
+                                const submittedAt = new Date(req.created_at);
+                                const diffHrs = Math.floor((new Date().getTime() - submittedAt.getTime()) / (1000 * 60 * 60));
+                                const timeAgoStr = diffHrs < 1 ? t.justNow : diffHrs < 24 ? `${diffHrs} ${t.hoursAgo}` : `${Math.floor(diffHrs/24)} ${t.daysAgo}`;
+                                
                                 return (
-                                    <div key={req.id} className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700/80 hover:shadow-md transition-shadow relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-[30px] -translate-y-1/2 translate-x-1/2 pointer-events-none transition-opacity opacity-0 group-hover:opacity-100"></div>
+                                    <div key={req.id} className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-xl hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all flex flex-col relative group">
+                                        {/* Status Badge Top Right */}
+                                        <div className="absolute top-6 right-6 z-10">
+                                            <span className={`text-[10px] font-black px-3 py-1 rounded-full border uppercase tracking-wider shadow-sm flex items-center gap-1.5 ${
+                                                req.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' :
+                                                req.status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20' :
+                                                req.status === 'cancelled' ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600' :
+                                                'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
+                                            }`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${req.status === 'approved' ? 'bg-emerald-500' : req.status === 'rejected' ? 'bg-rose-500' : req.status === 'pending_manager' || req.status === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                                                {req.status === 'approved' ? t.approved : req.status === 'rejected' ? t.rejected : req.status === 'cancelled' ? t.cancelled : req.status === 'pending_manager' ? t.pendingManagerStatus : t.pendingHRStatus}
+                                            </span>
+                                        </div>
 
-                                        <div className="flex justify-between items-start gap-4 mb-4 relative z-10">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 flex items-center justify-center shadow-sm shrink-0">
-                                                    <span className="text-2xl">{leaveTypeConfig.find(lt => lt.value === req.leave_type)?.icon || '📄'}</span>
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-base font-black text-slate-800 dark:text-white capitalize flex items-center gap-2">
-                                                        {leaveTypeConfig.find(lt => lt.value === req.leave_type)?.label || req.leave_type}
-                                                        <span className="text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-500/20">
-                                                            {days} {t.days}
-                                                        </span>
-                                                    </h3>
-                                                    <p className="text-sm font-bold text-slate-500 flex items-center gap-1.5 mt-0.5">
-                                                        <Calendar size={14} className="text-slate-400" /> {new Date(req.start_date).toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                        {req.start_date !== req.end_date && (
-                                                            <> - {new Date(req.end_date).toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</>
-                                                        )}
-                                                    </p>
-                                                </div>
+                                        {/* Profile / Icon Header */}
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-3xl shadow-inner border border-indigo-100/50 dark:border-indigo-500/20">
+                                                {typeInfo?.icon || '📄'}
                                             </div>
-                                            <div className="shrink-0 flex flex-col items-end gap-2">
-                                                <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-lg border uppercase tracking-wider ${req.status === 'approved' ? 'border-emerald-200 text-emerald-600 bg-emerald-50 dark:border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-500/10' :
-                                                    req.status === 'rejected' ? 'border-rose-200 text-rose-600 bg-rose-50 dark:border-rose-500/20 dark:text-rose-400 dark:bg-rose-500/10' :
-                                                        req.status === 'cancelled' ? 'border-slate-200 text-slate-500 bg-slate-50 dark:border-slate-500/20 dark:text-slate-400 dark:bg-slate-500/10' :
-                                                            'border-amber-200 text-amber-600 bg-amber-50 dark:border-amber-500/20 dark:text-amber-400 dark:bg-amber-500/10'
-                                                    }`}>
-                                                    {req.status === 'approved' ? `✅ ${t.approved}` : req.status === 'rejected' ? `❌ ${t.rejected}` : req.status === 'cancelled' ? `🔘 ${t.cancelled}` : req.status === 'pending_manager' ? `⏳ ${t.pendingManager}${req.approver ? ` (${req.approver.first_name})` : ''}` : `⏳ ${t.pendingHR}`}
-                                                </span>
+                                            <div>
+                                                <h3 className="text-lg font-black text-slate-800 dark:text-white leading-none mb-1">
+                                                    {user?.email?.split('@')[0]}
+                                                </h3>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{profileData?.role || 'Employee'}</p>
                                             </div>
                                         </div>
 
-                                        {req.reason && (
-                                            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700/50 mb-4 relative z-10">
-                                                <p className="text-sm font-bold text-slate-600 dark:text-slate-400 line-clamp-2"><span className="text-slate-400 dark:text-slate-500 mr-1">💬</span> {req.reason}</p>
+                                        {/* Structured Details Table-like Layout */}
+                                        <div className="space-y-2.5 mb-6 flex-1">
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="font-bold text-slate-400 dark:text-slate-500">{t.docNo}</span>
+                                                <span className="font-mono font-black text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-100 dark:border-slate-700/50">LV-{req.id.slice(0, 4).toUpperCase()}-{req.id.slice(-4).toUpperCase()}</span>
                                             </div>
-                                        )}
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="font-bold text-slate-400 dark:text-slate-500">{t.leaveType}:</span>
+                                                <span className="font-black text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                                                    {typeInfo?.label || req.leave_type}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="font-bold text-slate-400 dark:text-slate-500">{t.dateLabel}:</span>
+                                                <span className="font-black text-slate-700 dark:text-slate-300">
+                                                    {new Date(req.start_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })} - {new Date(req.end_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="font-bold text-slate-400 dark:text-slate-500">{t.amountLabel}:</span>
+                                                <span className="font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-3 py-0.5 rounded-full">{days} {t.days}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="font-bold text-slate-400 dark:text-slate-500">{t.submittedAt}</span>
+                                                <span className="font-bold text-slate-500 dark:text-slate-400">{timeAgoStr}</span>
+                                            </div>
+                                        </div>
 
-                                        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/50 relative z-10">
-                                            {/* Attachment in history */}
+                                        {/* Reason box */}
+                                        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 mb-6">
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">{t.reason}:</p>
+                                            <p className="text-sm font-bold text-slate-600 dark:text-slate-300 italic line-clamp-2">
+                                                {req.reason || '-'}
+                                            </p>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/50">
                                             {req.attachment_url ? (
-                                                <div className="flex-1">
-                                                    {req.attachment_url.startsWith('data:image') || req.attachment_url.match(/\.(jpg|jpeg|png|gif|webp)/i) ? (
-                                                        <a href={req.attachment_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group w-fit">
-                                                            <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-black/30 overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
-                                                                <img src={req.attachment_url} alt="attachment" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                                                            </div>
-                                                            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500 transition-colors flex items-center gap-1"><Paperclip size={12} strokeWidth={2.5} /> {t.viewAttachment}</span>
-                                                        </a>
-                                                    ) : (
-                                                        <a href={req.attachment_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors w-fit">
-                                                            <Paperclip size={14} strokeWidth={2.5} />
-                                                            {t.viewAttachment}
-                                                        </a>
-                                                    )}
-                                                </div>
+                                                <a href={req.attachment_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 px-4 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition-colors text-xs font-black border border-indigo-100 dark:border-indigo-500/20 active:scale-95 shadow-sm">
+                                                    <Paperclip size={14} strokeWidth={3} /> {t.viewAttachment}
+                                                </a>
                                             ) : (
-                                                <div className="flex-1"></div>
+                                                <div></div>
                                             )}
 
-                                            {/* Cancel Button */}
-                                            {req.status !== 'cancelled' && (
+                                            {req.status !== 'cancelled' && req.status !== 'rejected' && (
                                                 <button
                                                     onClick={() => handleCancelLeave(req.id)}
-                                                    className="px-4 py-2 rounded-xl bg-white dark:bg-rose-500/5 text-rose-500 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 hover:bg-rose-50 peer-hover:bg-rose-500/10 transition-all font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 shrink-0"
+                                                    className="px-6 py-2.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition-all font-black text-sm flex items-center gap-2 shadow-lg shadow-rose-500/20 active:scale-95"
                                                 >
-                                                    <XCircle size={14} strokeWidth={2.5} /> {t.cancelRequest}
+                                                    <X size={16} strokeWidth={3} /> {t.cancel}
                                                 </button>
                                             )}
                                         </div>

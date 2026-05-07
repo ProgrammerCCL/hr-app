@@ -165,7 +165,7 @@ export interface PayrollRecord {
     status: 'draft' | 'confirmed' | 'paid';
     notes?: string;
     created_at: string;
-    profiles?: { first_name: string; last_name: string; department?: string; position?: string; bank_name?: string; bank_account?: string };
+    profiles?: { first_name: string; last_name: string; employee_code?: string; department?: string; position?: string; bank_name?: string; bank_account?: string };
 }
 
 export interface KPICriteria {

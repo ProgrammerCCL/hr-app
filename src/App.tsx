@@ -13,7 +13,7 @@ import type { Lang } from './i18n/translations';
 
 function AuthWrapper() {
     const { user, loading } = useAuth();
-    const { t } = useApp();
+    const { t } = useApp() || { t: {} };
     const [currentView, setCurrentView] = useState<string | null>(null);
     const [profile, setProfileState] = useState<Profile | null>(null);
     const [profileLoading, setProfileLoading] = useState(true);

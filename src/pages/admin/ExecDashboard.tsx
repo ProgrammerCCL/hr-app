@@ -27,7 +27,7 @@ interface EmployeeStat {
 import { useApp } from '../../context/AppContext';
 
 const ExecDashboard = ({ employees, settings }: ExecDashProps) => {
-    const { t } = useApp();
+    const { t, showToast } = useApp();
     const [month, setMonth] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; });
     const [stats, setStats] = useState<EmployeeStat[]>([]);
     const [loading, setLoading] = useState(false);
@@ -144,7 +144,7 @@ const ExecDashboard = ({ employees, settings }: ExecDashProps) => {
     };
 
     const exportExecCSV = () => {
-        if (stats.length === 0) { alert(t.noData); return; }
+        if (stats.length === 0) { showToast(t.noData, 'error'); return; }
         const bom = '\uFEFF';
         const headers = [t.idHeader, t.fullname, t.department, t.shift, t.workingDays, `${t.lateDays} (${t.days})`, `${t.lateDays} (${t.minutes})`, t.absentDays, t.leaveDays, t.avgWorkHoursShort, t.onTimePercent];
         const rows = stats.map(s => [s.code, s.name, s.department, s.shift, s.totalDays, s.lateDays, s.lateMinutes, s.absentDays, s.leavesTaken, s.avgWorkHours, `${s.onTimePercent}%`]);
@@ -166,63 +166,92 @@ const ExecDashboard = ({ employees, settings }: ExecDashProps) => {
     return (
         <div className="space-y-6 animate-fadeIn">
             {/* Controls */}
-            <div className="flex items-center gap-4">
-                <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="bg-gray-900/50 border border-gray-700 rounded-lg p-2.5 text-white text-sm focus:border-indigo-500 focus:outline-none" />
-                <button onClick={exportExecCSV} className="px-4 py-2 bg-emerald-600 rounded-lg text-sm hover:bg-emerald-500 transition flex items-center gap-2"><Download size={14} /> Export CSV</button>
-                {loading && <span className="text-xs text-gray-500 animate-pulse">{t.loading}</span>}
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <Calendar size={20} className="text-indigo-600" />
+                    <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-bold focus:border-indigo-500 focus:outline-none transition-all" />
+                    {loading && <span className="text-xs text-indigo-500 font-bold animate-pulse flex items-center gap-2"><Clock size={14} className="animate-spin" /> {t.loading}</span>}
+                </div>
+                <button onClick={exportExecCSV} className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-500 transition-all flex items-center gap-2 shadow-lg shadow-emerald-100 active:scale-95">
+                    <Download size={16} strokeWidth={2.5} /> {t.export || 'Export CSV'}
+                </button>
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-4 gap-4">
-                <div className="glass-panel p-5 text-center">
-                    <Users size={24} className="mx-auto text-indigo-400 mb-2" />
-                    <p className="text-2xl font-bold">{stats.length}</p>
-                    <p className="text-xs text-gray-400">{t.totalEmployees}</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center group hover:border-indigo-100 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <Users size={24} strokeWidth={2.5} />
+                    </div>
+                    <p className="text-3xl font-black text-slate-800 leading-none mb-1">{stats.length}</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{t.totalEmployees}</p>
                 </div>
-                <div className="glass-panel p-5 text-center">
-                    <TrendingUp size={24} className="mx-auto text-green-400 mb-2" />
-                    <p className="text-2xl font-bold text-green-400">{avgOnTime}%</p>
-                    <p className="text-xs text-gray-400">{t.avgOnTime}</p>
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center group hover:border-emerald-100 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <TrendingUp size={24} strokeWidth={2.5} />
+                    </div>
+                    <p className="text-3xl font-black text-emerald-600 leading-none mb-1">{avgOnTime}%</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{t.avgOnTime}</p>
                 </div>
-                <div className="glass-panel p-5 text-center">
-                    <Clock size={24} className="mx-auto text-yellow-400 mb-2" />
-                    <p className="text-2xl font-bold text-yellow-400">{totalLate}</p>
-                    <p className="text-xs text-gray-400">{t.lateTotal}</p>
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center group hover:border-amber-100 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <Clock size={24} strokeWidth={2.5} />
+                    </div>
+                    <p className="text-3xl font-black text-amber-600 leading-none mb-1">{totalLate}</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{t.lateTotal}</p>
                 </div>
-                <div className="glass-panel p-5 text-center">
-                    <AlertTriangle size={24} className="mx-auto text-red-400 mb-2" />
-                    <p className="text-2xl font-bold text-red-400">{totalAbsent}</p>
-                    <p className="text-xs text-gray-400">{t.absentTotal}</p>
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center group hover:border-rose-100 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <AlertTriangle size={24} strokeWidth={2.5} />
+                    </div>
+                    <p className="text-3xl font-black text-rose-600 leading-none mb-1">{totalAbsent}</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{t.absentTotal}</p>
                 </div>
             </div>
 
             {/* Top Lists */}
-            <div className="grid grid-cols-2 gap-4">
-                <div className="glass-panel p-5">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2 text-yellow-400"><TrendingDown size={18} /> {t.topLate}</h3>
-                    <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-black mb-5 flex items-center gap-2 text-amber-600 tracking-tight">
+                        <TrendingDown size={20} strokeWidth={2.5} /> {t.topLate}
+                    </h3>
+                    <div className="space-y-3">
                         {topLate.map((s, i) => (
-                            <div key={s.id} className="flex items-center justify-between p-2.5 bg-white/5 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-red-500/30 text-red-400' : i === 1 ? 'bg-orange-500/30 text-orange-400' : 'bg-gray-500/20 text-gray-400'}`}>{i + 1}</span>
-                                    <div><p className="text-sm font-medium">{s.name}</p><p className="text-xs text-gray-500">{s.code} | {s.department}</p></div>
+                            <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100/50 hover:border-amber-100 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>{i + 1}</span>
+                                    <div>
+                                        <p className="text-sm font-black text-slate-800">{s.name}</p>
+                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{s.code} • {s.department}</p>
+                                    </div>
                                 </div>
-                                <div className="text-right"><p className="text-sm font-bold text-yellow-400">{s.lateDays} {t.days}</p><p className="text-xs text-gray-500">{s.lateMinutes} {t.minutes}</p></div>
+                                <div className="text-right">
+                                    <p className="text-sm font-black text-amber-600">{s.lateDays} {t.days}</p>
+                                    <p className="text-[11px] font-bold text-slate-400">{s.lateMinutes} {t.minutes}</p>
+                                </div>
                             </div>
                         ))}
-                        {topLate.length === 0 && <p className="text-gray-500 text-sm text-center py-4">{t.noData}</p>}
+                        {topLate.length === 0 && <p className="text-slate-400 text-sm font-bold text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">{t.noData}</p>}
                     </div>
                 </div>
-                <div className="glass-panel p-5">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2 text-green-400"><Award size={18} /> {t.topOnTime}</h3>
-                    <div className="space-y-2">
+                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-black mb-5 flex items-center gap-2 text-emerald-600 tracking-tight">
+                        <Award size={20} strokeWidth={2.5} /> {t.topOnTime}
+                    </h3>
+                    <div className="space-y-3">
                         {topOnTime.filter(s => s.totalDays > 0).map((s, i) => (
-                            <div key={s.id} className="flex items-center justify-between p-2.5 bg-white/5 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-green-500/30 text-green-400' : i === 1 ? 'bg-emerald-500/30 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}>{i + 1}</span>
-                                    <div><p className="text-sm font-medium">{s.name}</p><p className="text-xs text-gray-500">{s.code} | {s.department}</p></div>
+                            <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100/50 hover:border-emerald-100 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black ${i === 0 ? 'bg-emerald-100 text-emerald-700' : i === 1 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>{i + 1}</span>
+                                    <div>
+                                        <p className="text-sm font-black text-slate-800">{s.name}</p>
+                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{s.code} • {s.department}</p>
+                                    </div>
                                 </div>
-                                <div className="text-right"><p className="text-sm font-bold text-green-400">{s.onTimePercent}%</p><p className="text-xs text-gray-500">{s.avgWorkHours} {t.hours}</p></div>
+                                <div className="text-right">
+                                    <p className="text-sm font-black text-emerald-600">{s.onTimePercent}%</p>
+                                    <p className="text-[11px] font-bold text-slate-400">{s.avgWorkHours} {t.hours}</p>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -230,35 +259,57 @@ const ExecDashboard = ({ employees, settings }: ExecDashProps) => {
             </div>
 
             {/* Full Table */}
-            <div className="glass-panel overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                    <thead><tr className="bg-white/5 border-b border-white/5 text-gray-400 text-xs uppercase tracking-wider">
-                        <th className="p-3">{t.idHeader}</th><th className="p-3">{t.fullNameHeader}</th><th className="p-3">{t.department}</th><th className="p-3">{t.shift}</th>
-                        <th className="p-3 text-center">{t.workingDays}</th><th className="p-3 text-center">{t.lateDays}</th><th className="p-3 text-center">{t.absentDays}</th><th className="p-3 text-center">{t.leaveDays}</th>
-                        <th className="p-3 text-center">{t.avgWorkHoursShort}</th><th className="p-3 text-center">{t.onTime}</th>
-                    </tr></thead>
-                    <tbody className="divide-y divide-white/5">
-                        {stats.map(s => (
-                            <tr key={s.id} className="hover:bg-white/5 transition">
-                                <td className="p-3 text-xs font-mono text-indigo-400">{s.code}</td>
-                                <td className="p-3 text-sm">{s.name}</td>
-                                <td className="p-3 text-sm text-gray-400">{s.department}</td>
-                                <td className="p-3 text-xs text-gray-400">{s.shift}</td>
-                                <td className="p-3 text-center text-sm">{s.totalDays}</td>
-                                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded text-xs ${s.lateDays > 3 ? 'bg-red-500/20 text-red-400' : s.lateDays > 0 ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500'}`}>{s.lateDays}</span></td>
-                                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded text-xs ${s.absentDays > 0 ? 'bg-red-500/20 text-red-400' : 'text-gray-500'}`}>{s.absentDays}</span></td>
-                                <td className="p-3 text-center text-sm text-gray-400">{s.leavesTaken}</td>
-                                <td className="p-3 text-center text-sm font-mono">{s.avgWorkHours}</td>
-                                <td className="p-3 text-center">
-                                    <div className="flex items-center gap-2 justify-center">
-                                        <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden"><div className={`h-full rounded-full ${s.onTimePercent >= 90 ? 'bg-green-500' : s.onTimePercent >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${s.onTimePercent}%` }}></div></div>
-                                        <span className="text-xs font-mono">{s.onTimePercent}%</span>
-                                    </div>
-                                </td>
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 text-[11px] font-bold uppercase tracking-[0.1em]">
+                                <th className="p-5 pl-8">{t.idHeader}</th>
+                                <th className="p-5">{t.fullNameHeader}</th>
+                                <th className="p-5">{t.department}</th>
+                                <th className="p-5 text-center">{t.workingDays}</th>
+                                <th className="p-5 text-center">{t.lateDays}</th>
+                                <th className="p-5 text-center">{t.absentDays}</th>
+                                <th className="p-5 text-center">{t.avgWorkHoursShort}</th>
+                                <th className="p-5 pr-8">{t.onTime}</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {stats.map(s => (
+                                <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
+                                    <td className="p-5 pl-8 text-xs font-bold text-indigo-600">{s.code}</td>
+                                    <td className="p-5">
+                                        <p className="text-sm font-bold text-slate-800">{s.name}</p>
+                                        <p className="text-[11px] font-bold text-slate-400">{s.shift}</p>
+                                    </td>
+                                    <td className="p-5 text-xs font-bold text-slate-500">{s.department}</td>
+                                    <td className="p-5 text-center text-sm font-bold text-slate-700">{s.totalDays}</td>
+                                    <td className="p-5 text-center">
+                                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black tracking-wider ${s.lateDays > 3 ? 'bg-rose-50 text-rose-600 border border-rose-100' : s.lateDays > 0 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'text-slate-400 bg-slate-50'}`}>{s.lateDays}</span>
+                                    </td>
+                                    <td className="p-5 text-center">
+                                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black tracking-wider ${s.absentDays > 0 ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'text-slate-400 bg-slate-50'}`}>{s.absentDays}</span>
+                                    </td>
+                                    <td className="p-5 text-center text-sm font-bold text-slate-700">{s.avgWorkHours}</td>
+                                    <td className="p-5 pr-8">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex-1 min-w-[60px] h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                <div className={`h-full rounded-full transition-all duration-1000 ${s.onTimePercent >= 90 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : s.onTimePercent >= 70 ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)]'}`} style={{ width: `${s.onTimePercent}%` }}></div>
+                                            </div>
+                                            <span className="text-xs font-black text-slate-600 min-w-[32px]">{s.onTimePercent}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {stats.length === 0 && !loading && (
+                    <div className="flex flex-col items-center justify-center py-24 text-slate-400 bg-slate-50/30">
+                        <Users size={48} strokeWidth={1} className="mb-4 opacity-20" />
+                        <p className="font-bold tracking-tight">{t.noData}</p>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -3,11 +3,10 @@ import type { Lang } from '../i18n/translations';
 
 export function SettingsToolbar() {
     const { lang, setLang, theme, toggleTheme, langLabels } = useApp();
-    const langs: Lang[] = ['th', 'en', 'ja'];
+    const langs: Lang[] = ['th', 'en'];
     const langDisplayMap: Record<Lang, string> = {
         th: 'TH',
         en: 'EN',
-        ja: 'JP'
     };
 
     return (
