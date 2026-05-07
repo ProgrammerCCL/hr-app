@@ -155,6 +155,9 @@ function App() {
         <ErrorBoundary>
             <AppProvider>
                 <AuthProvider>
+                    <div className="fixed top-2 left-2 z-[9999] px-2 py-1 bg-black/50 text-[10px] text-white rounded font-mono pointer-events-none">
+                        v1.0.debug-h1-fix
+                    </div>
                     <AuthWrapper />
                 </AuthProvider>
             </AppProvider>

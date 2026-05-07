@@ -5,7 +5,7 @@ import { ArrowRight, Mail, Lock, Eye, EyeOff, Hash, CalendarDays, Check, FileTex
 import { useApp } from '../context/AppContext';
 import { SettingsToolbar } from '../components/SettingsToolbar';
 
-const Login = () => {
+export function Login() {
     const { t } = useApp();
     const [loginId, setLoginId] = useState('');
     const [password, setPassword] = useState('');
@@ -248,6 +248,7 @@ const Login = () => {
             </div>
         </div>
     );
-};
+}
 
+Login.displayName = "Login";
 export default Login;
