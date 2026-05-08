@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   tax_id text,
   social_security_id text,
   employee_code text UNIQUE,
+  employee_type text DEFAULT 'full-time',
   shift_id uuid, -- FK added later
   created_at timestamptz DEFAULT now() NOT NULL
 );
@@ -39,6 +40,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS bank_name text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS bank_account text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS tax_id text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS social_security_id text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS employee_type text DEFAULT 'full-time';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS employee_code text UNIQUE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS shift_id uuid;
 
