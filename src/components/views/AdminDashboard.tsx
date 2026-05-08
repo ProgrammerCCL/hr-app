@@ -799,7 +799,8 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
             // Create a separate client so we don't lose admin session
             const tempClient = createClient(
                 supabaseUrl || '',
-                supabaseKey || ''
+                supabaseKey || '',
+                { auth: { persistSession: false } }
             );
             const { data: authData, error: authError } = await tempClient.auth.signUp({
                 email: finalEmail,
