@@ -168,8 +168,8 @@ const EmployeeEditModal = ({ employee, departments, shifts, allEmployees, onSave
                                     message: 'ยืนยันรีเซ็ตรหัสผ่านเป็น "123456" สำหรับพนักงานนี้?',
                                     type: 'warning'
                                 }))) return;
-                                const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-                                if (!serviceKey) return showToast('❌ ไม่สามารถรีเซ็ตรหัสผ่านได้เนื่องจากไม่ได้ตั้งค่า VITE_SUPABASE_SERVICE_ROLE_KEY', 'error');
+                                const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+                                if (!serviceKey) return showToast('❌ ไม่สามารถรีเซ็ตรหัสผ่านได้เนื่องจากไม่ได้ตั้งค่า NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY', 'error');
 
                                 setResetting(true);
                                 try {
@@ -634,6 +634,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
         if (!editingEmployee) return;
         // Sanitize: convert empty strings to null for UUID/numeric/optional fields
         const sanitized: any = { ...updated };
+        const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
         const nullIfEmpty = ['shift_id', 'manager_id', 'employee_code', 'department', 'position', 'phone', 'tax_id', 'social_security_id', 'bank_name', 'bank_account'];
         nullIfEmpty.forEach(key => {
             if (sanitized[key] === '') sanitized[key] = null;
@@ -655,11 +656,11 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
 
         // Update email if changed
         if (emailChanged) {
-            const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+            const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
             if (!serviceKey) {
                 // Fallback: update email in profiles table only
                 await supabase.from('profiles').update({ email: newEmail }).eq('id', editingEmployee.id);
-                showToast('✅ บันทึกข้อมูลสำเร็จ!\n\n⚠️ อีเมลถูกเปลี่ยนในระบบแล้ว แต่ไม่ได้เปลี่ยน email สำหรับ login\nเพราะยังไม่ได้ตั้งค่า Service Role Key\n\nกรุณาเพิ่ม VITE_SUPABASE_SERVICE_ROLE_KEY ใน .env', 'success');
+                showToast('✅ บันทึกข้อมูลสำเร็จ!\n\n⚠️ อีเมลถูกเปลี่ยนในระบบแล้ว แต่ไม่ได้เปลี่ยน email สำหรับ login\nเพราะยังไม่ได้ตั้งค่า Service Role Key\n\nกรุณาเพิ่ม NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ใน .env', 'success');
             } else {
                 try {
                     // Use Admin API to change auth email

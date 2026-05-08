@@ -352,6 +352,14 @@ CREATE POLICY "notif_insert" ON notifications FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "notif_update" ON notifications;
 CREATE POLICY "notif_update" ON notifications FOR UPDATE USING (auth.uid() = user_id);
 
+-- LEAVE_TYPES
+DROP POLICY IF EXISTS "leave_types_select" ON leave_types;
+CREATE POLICY "leave_types_select" ON leave_types FOR SELECT USING (true);
+
+-- WORK_SHIFTS
+DROP POLICY IF EXISTS "shifts_select" ON work_shifts;
+CREATE POLICY "shifts_select" ON work_shifts FOR SELECT USING (true);
+
 -- ============================================================
 -- TRIGGERS
 -- ============================================================
@@ -398,28 +406,25 @@ INSERT INTO public.company_settings (key, value) VALUES
   ('social_security_max', '750')
 ON CONFLICT (key) DO NOTHING;
 
--- Leave Types (V8 version)
-INSERT INTO public.leave_types (name, label, quota_per_year, is_paid, sort_order) VALUES
-  ('sick', 'ลาป่วย', 30, true, 1),
-  ('personal', 'ลากิจ', 3, true, 2),
-  ('unpaid_personal', 'ลากิจไม่รับค่าจ้าง', 999, false, 3),
-  ('annual', 'ลาพักร้อน', 6, true, 4),
-  ('ordination', 'ลาบวช', 30, true, 5),
-  ('maternity', 'ลาคลอดบุตร', 30, true, 6),
-  ('funeral_parents', 'ลาชาปณกิจ พ่อ แม่', 7, true, 7),
-  ('funeral_relatives', 'ลาชาปณกิจ ญาติพี่น้อง', 3, true, 8),
-  ('holiday_swap', 'ลาสลับวันหยุดแทนที่ทำงานในวันหยุด', 999, true, 9),
-  ('sterilization', 'ลาทำหมัน', 7, true, 10)
+-- Leave Types (Full Configuration)
+INSERT INTO public.leave_types (name, label, quota_per_year, is_paid, min_days_advance, max_days_backdated, sort_order) VALUES
+  ('sick', 'ลาป่วย', 30, true, 0, 30, 1),
+  ('personal', 'ลากิจ', 3, true, 3, 0, 2),
+  ('unpaid_personal', 'ลากิจไม่รับค่าจ้าง', 999, false, 3, 0, 3),
+  ('annual', 'ลาพักร้อน', 6, true, 3, 0, 4),
+  ('ordination', 'ลาบวช', 30, true, 30, 0, 5),
+  ('maternity', 'ลาคลอดบุตร', 30, true, 30, 0, 6),
+  ('funeral_parents', 'ลาชาปณกิจ พ่อ แม่', 7, true, 0, 30, 7),
+  ('funeral_relatives', 'ลาชาปณกิจ ญาติพี่น้อง', 3, true, 0, 30, 8),
+  ('holiday_swap', 'ลาสลับวันหยุดแทนที่ทำงานในวันหยุด', 999, true, 1, 0, 9),
+  ('sterilization', 'ลาทำหมัน', 7, true, 1, 0, 10)
 ON CONFLICT (name) DO UPDATE SET
   label = EXCLUDED.label,
   quota_per_year = EXCLUDED.quota_per_year,
   is_paid = EXCLUDED.is_paid,
+  min_days_advance = EXCLUDED.min_days_advance,
+  max_days_backdated = EXCLUDED.max_days_backdated,
   sort_order = EXCLUDED.sort_order;
-
--- Update V9 Leave Limits
-UPDATE public.leave_types SET min_days_advance = 3 WHERE name = 'annual';
-UPDATE public.leave_types SET min_days_advance = 3 WHERE name = 'personal';
-UPDATE public.leave_types SET max_days_backdated = 2 WHERE name = 'sick';
 
 -- Work Shifts
 INSERT INTO public.work_shifts (name, label, start_time, end_time, is_overnight, late_threshold_minutes, sort_order) VALUES
@@ -427,6 +432,21 @@ INSERT INTO public.work_shifts (name, label, start_time, end_time, is_overnight,
   ('afternoon', 'กะบ่าย (11:00-20:00)',      '11:00', '20:00', false, 15, 2),
   ('evening',   'กะค่ำ (14:00-00:00)',       '14:00', '00:00', true,  15, 3),
   ('night',     'กะดึก (22:00-07:00)',       '22:00', '07:00', true,  15, 4)
+ON CONFLICT (name) DO NOTHING;
+
+-- Departments
+INSERT INTO public.departments (name, description, is_active) VALUES
+  ('Accounting & Finance', 'แผนกบัญชีและการเงิน', true),
+  ('HR', 'แผนกทรัพยากรบุคคล', true),
+  ('IT', 'แผนกเทคโนโลยีสารสนเทศ', true),
+  ('Messenger', 'แผนกรับส่งเอกสาร', true),
+  ('Sales', 'แผนกขาย', true),
+  ('Service', 'แผนกบริการลูกค้า', true),
+  ('Support / Telesales', 'แผนกสนับสนุนและขายทางโทรศัพท์', true),
+  ('การเงิน', 'ฝ่ายการเงินและบัญชี', true),
+  ('การตลาด', 'ฝ่ายการตลาดและประชาสัมพันธ์', true),
+  ('บริหาร', 'ฝ่ายบริหารและจัดการองค์กร', true),
+  ('ปฏิบัติการ', 'ฝ่ายปฏิบัติการและโลจิสติกส์', true)
 ON CONFLICT (name) DO NOTHING;
 
 -- KPI Criteria
