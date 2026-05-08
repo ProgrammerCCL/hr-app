@@ -684,7 +684,7 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                     <div className="flex justify-between items-start p-4 md:p-6 shrink-0 bg-gradient-to-b from-black/70 via-black/40 to-transparent">
                         <div>
                             <h3 className="text-2xl font-black tracking-tight flex items-center gap-2.5" style={{ color: '#ffffff' }}>
-                                <Camera style={{ color: '#ffffff' }} size={26} /> {attendanceType === 'site_in' ? t.siteArrival : attendanceType === 'site_out' ? t.siteDeparture : attendanceType.replace('_', ' ').toUpperCase()}
+                                <Camera style={{ color: '#ffffff' }} size={26} /> {attendanceType === 'site_in' ? t.siteArrival : attendanceType === 'site_out' ? t.siteDeparture : (attendanceType || '').replace('_', ' ').toUpperCase()}
                             </h3>
                             <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white mt-2.5 shadow-lg">
                                 <span className="text-sm font-extrabold text-slate-800 tracking-wide">{t.cameraVerification}</span>
@@ -873,15 +873,15 @@ const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                             <button onClick={() => initiateAttendance('site_in')} className="bg-white dark:bg-slate-800 p-4 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.2)] border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center gap-3 hover:bg-orange-50 dark:hover:bg-slate-700/50 transition-all group active:scale-95">
                                 <div className="w-14 h-14 rounded-[1.2rem] bg-orange-50 dark:bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-105 transition-transform border border-orange-100 dark:border-orange-500/20 shadow-sm"><Briefcase size={24} strokeWidth={2.5} /></div>
-                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: t.siteArrival.split(' ').join('<br />') }}></span>
+                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: String(t.siteArrival || '').split(' ').join('<br />') }}></span>
                             </button>
                             <button onClick={() => initiateAttendance('site_out')} className="bg-white dark:bg-slate-800 p-4 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.2)] border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center gap-3 hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-all group active:scale-95">
                                 <div className="w-14 h-14 rounded-[1.2rem] bg-blue-50 dark:bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-105 transition-transform border border-blue-100 dark:border-blue-500/20 shadow-sm"><Building size={24} strokeWidth={2.5} /></div>
-                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: t.siteDeparture.split(' ').join('<br />') }}></span>
+                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: String(t.siteDeparture || '').split(' ').join('<br />') }}></span>
                             </button>
                             <button onClick={() => setCurrentView('payslip')} className="bg-white dark:bg-slate-800 p-4 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.2)] border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center gap-3 hover:bg-emerald-50 dark:hover:bg-slate-700/50 transition-all group active:scale-95">
                                 <div className="w-14 h-14 rounded-[1.2rem] bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-105 transition-transform border border-emerald-100 dark:border-emerald-500/20 shadow-sm"><FileText size={24} strokeWidth={2.5} /></div>
-                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: t.payslip.split(' ').join('<br />') }}></span>
+                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 text-center leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: String(t.payslip || '').split(' ').join('<br />') }}></span>
                             </button>
                         </div>
 
@@ -1433,7 +1433,7 @@ const HistoryTab = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: strin
                                                         {pair.in && pair.out ? 'บันทึกสำเร็จ' : pair.in ? 'บันทึกสำเร็จ (ยังไม่บันทึกออก)' : 'บันทึกออก (ไม่พบเข้า)'}
                                                     </h4>
                                                     <div className="border border-teal-500/30 dark:border-teal-400/20 bg-teal-50/30 dark:bg-teal-400/5 rounded px-2 py-0.5 text-[11px] font-mono font-bold text-teal-600 dark:text-teal-400 shadow-sm">
-                                                        #{log.id.slice(0, 8).toUpperCase()}
+                                                        #{String(log?.id || '').slice(0, 8).toUpperCase()}
                                                     </div>
                                                 </div>
 
@@ -1811,7 +1811,7 @@ const CompanyCalendar = ({ userId, onViewPhoto, onSelectLogDetail }: { userId?: 
                                                                 {pair.in && pair.out ? 'บันทึกสำเร็จ' : pair.in ? 'บันทึกสำเร็จ (ยังไม่บันทึกออก)' : 'บันทึกออก (ไม่พบเข้า)'}
                                                             </h4>
                                                             <div className="border border-teal-500/30 dark:border-teal-400/20 bg-teal-50/30 dark:bg-teal-400/5 rounded px-2 py-0.5 text-[11px] font-mono font-bold text-teal-600 dark:text-teal-400">
-                                                                #{log.id.slice(0, 8).toUpperCase()}
+                                                                #{String(log?.id || '').slice(0, 8).toUpperCase()}
                                                             </div>
                                                         </div>
 
