@@ -796,17 +796,26 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
 
         setAddingEmp(true);
         try {
+            const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+            const useAdmin = !!serviceKey;
+            
             // Create a separate client so we don't lose admin session
             const tempClient = createClient(
                 supabaseUrl || '',
-                supabaseKey || '',
+                useAdmin ? serviceKey : (supabaseKey || ''),
                 { auth: { persistSession: false } }
             );
-            const { data: authData, error: authError } = await tempClient.auth.signUp({
-                email: finalEmail,
-                password: newEmp.password,
-                options: {
-                    data: {
+
+            let authData: any;
+            let authError: any;
+
+            if (useAdmin) {
+                // Use Admin API to bypass rate limits and email confirmation
+                const { data, error } = await tempClient.auth.admin.createUser({
+                    email: finalEmail,
+                    password: newEmp.password,
+                    email_confirm: true,
+                    user_metadata: {
                         role: newEmp.role,
                         first_name: newEmp.first_name,
                         last_name: newEmp.last_name || '',
@@ -814,8 +823,29 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                         department: newEmp.department || '',
                         position: newEmp.position || '',
                     }
-                }
-            });
+                });
+                authData = data;
+                authError = error;
+            } else {
+                // Fallback to normal signUp (will hit rate limits)
+                const { data, error } = await tempClient.auth.signUp({
+                    email: finalEmail,
+                    password: newEmp.password,
+                    options: {
+                        data: {
+                            role: newEmp.role,
+                            first_name: newEmp.first_name,
+                            last_name: newEmp.last_name || '',
+                            employee_code: newEmp.employee_code?.toUpperCase() || '',
+                            department: newEmp.department || '',
+                            position: newEmp.position || '',
+                        }
+                    }
+                });
+                authData = data;
+                authError = error;
+            }
+
             if (authError) throw authError;
             if (authData.user) {
                 // Wait for trigger to create profile
