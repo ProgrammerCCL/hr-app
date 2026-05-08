@@ -650,9 +650,32 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
         if (sanitized.base_salary === '') sanitized.base_salary = 0;
         else if (sanitized.base_salary) sanitized.base_salary = Number(sanitized.base_salary);
         
+        // CLEAN DATA: Remove any nested objects or fields that don't exist in the profiles table
+        // to prevent 400 Bad Request
+        const profileFields = [
+            'employee_code', 'first_name', 'last_name', 'role', 'department', 
+            'position', 'phone', 'employee_type', 'start_date', 'manager_id', 
+            'shift_id', 'base_salary', 'bank_name', 'bank_account', 'tax_id', 
+            'social_security_id', 'is_active', 'avatar_url', 'updated_at'
+        ];
+        
+        const finalData: any = {};
+        profileFields.forEach(field => {
+            if (sanitized[field] !== undefined) {
+                finalData[field] = sanitized[field];
+            }
+        });
+
+        console.log('[Admin] Updating Profile ID:', editingEmployee.id);
+        console.log('[Admin] Sanitized Data:', finalData);
+
         // Update profile data
-        const { error, count } = await supabase.from('profiles').update(sanitized, { count: 'exact' }).eq('id', editingEmployee.id);
-        if (error) { showToast('Error: ' + error.message, 'error'); return; }
+        const { error, count } = await supabase.from('profiles').update(finalData, { count: 'exact' }).eq('id', editingEmployee.id);
+        if (error) { 
+            console.error('[Admin] Update Error:', error);
+            showToast('Error: ' + error.message, 'error'); 
+            return; 
+        }
         if (count === 0) {
             showToast('⚠️ ไม่สามารถบันทึกได้!\n\nสาเหตุ: บัญชีของคุณอาจไม่มีสิทธิ์ Admin\nกรุณาตรวจสอบ role ของบัญชีที่ login อยู่ ต้องเป็น "admin" หรือ "hr"', 'error');
             return;
