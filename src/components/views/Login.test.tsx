@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Login from './Login';
-import { AppProvider } from '../context/AppContext';
+import { AppProvider } from '@/context/AppContext';
 
 vi.mock('../lib/supabase/client', () => ({
     supabase: {
@@ -16,7 +16,7 @@ vi.mock('../lib/supabase/client', () => ({
     }
 }));
 
-import { supabase } from '../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 describe('Login Component', () => {
     beforeEach(() => {

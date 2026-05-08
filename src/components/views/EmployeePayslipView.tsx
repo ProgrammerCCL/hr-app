@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Printer, Download, X, DollarSign, ChevronLeft, Calendar } from 'lucide-react';
-import { supabase } from '../lib/supabase/client';
-import type { PayrollRecord } from '../types';
-import { useApp } from '../context/AppContext';
+import { supabase } from '@/lib/supabase/client';
+import type { PayrollRecord } from '@/types';
+import { useApp } from '@/context/AppContext';
 
 interface EmployeePayslipViewProps {
     userId: string;

@@ -1,9 +1,10 @@
+'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, Hash, CalendarDays, Check, FileText, User } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { SettingsToolbar } from '../components/SettingsToolbar';
+import { useApp } from '@/context/AppContext';
+import { SettingsToolbar } from '@/components/SettingsToolbar';
 
 export function Login() {
     const { t } = useApp();
@@ -17,14 +18,16 @@ export function Login() {
     const [rememberMe, setRememberMe] = useState(false);
 
     useEffect(() => {
-        const savedLoginId = localStorage.getItem('hrms_loginId');
-        const savedPassword = localStorage.getItem('hrms_password');
-        const savedLoginMode = localStorage.getItem('hrms_loginMode') as 'email' | 'code';
-        if (savedLoginId && savedPassword) {
-            setLoginId(savedLoginId);
-            setPassword(savedPassword);
-            setRememberMe(true);
-            if (savedLoginMode) setLoginMode(savedLoginMode);
+        if (typeof window !== 'undefined') {
+            const savedLoginId = localStorage.getItem('hrms_loginId');
+            const savedPassword = localStorage.getItem('hrms_password');
+            const savedLoginMode = localStorage.getItem('hrms_loginMode') as 'email' | 'code';
+            if (savedLoginId && savedPassword) {
+                setLoginId(savedLoginId);
+                setPassword(savedPassword);
+                setRememberMe(true);
+                if (savedLoginMode) setLoginMode(savedLoginMode);
+            }
         }
     }, []);
 
@@ -50,14 +53,16 @@ export function Login() {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
 
-            if (rememberMe) {
-                localStorage.setItem('hrms_loginId', loginId);
-                localStorage.setItem('hrms_password', password);
-                localStorage.setItem('hrms_loginMode', loginMode);
-            } else {
-                localStorage.removeItem('hrms_loginId');
-                localStorage.removeItem('hrms_password');
-                localStorage.removeItem('hrms_loginMode');
+            if (typeof window !== 'undefined') {
+                if (rememberMe) {
+                    localStorage.setItem('hrms_loginId', loginId);
+                    localStorage.setItem('hrms_password', password);
+                    localStorage.setItem('hrms_loginMode', loginMode);
+                } else {
+                    localStorage.removeItem('hrms_loginId');
+                    localStorage.removeItem('hrms_password');
+                    localStorage.removeItem('hrms_loginMode');
+                }
             }
         } catch (err: any) {
             if (err.message.includes('Email not confirmed')) {

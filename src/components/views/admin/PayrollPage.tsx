@@ -1,16 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { DollarSign, Calculator, CheckCircle, AlertTriangle, Save, FileText } from 'lucide-react';
-import { supabase } from '../../lib/supabase/client';
-import { useAuth } from '../../context/AuthContext';
-import type { Profile, PayrollRecord } from '../../types';
+import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import type { Profile, PayrollRecord } from '@/types';
 
 interface PayrollPageProps {
     employees: Profile[];
     settings: Record<string, string>;
 }
 
-import { useApp } from '../../context/AppContext';
+import { useApp } from '@/context/AppContext';
 
 const PayrollPage = ({ employees, settings }: PayrollPageProps) => {
     const { t, lang, showToast, showConfirm } = useApp();

@@ -1,14 +1,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Printer, Download, X, Building, DollarSign, Clock } from 'lucide-react';
-import { supabase } from '../../lib/supabase/client';
-import type { PayrollRecord } from '../../types';
+import { supabase } from '@/lib/supabase/client';
+import type { PayrollRecord } from '@/types';
 
 interface PayslipPageProps {
     settings: Record<string, string>;
 }
 
-import { useApp } from '../../context/AppContext';
+import { useApp } from '@/context/AppContext';
 
 const PayslipPage = ({ settings }: PayslipPageProps) => {
     const { t, lang } = useApp();

@@ -1,16 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { BarChart3, Star, Award, TrendingUp, Users, Settings, Plus, Trash2, Save, X } from 'lucide-react';
-import { supabase } from '../../lib/supabase/client';
-import { useAuth } from '../../context/AuthContext';
-import type { Profile, KPICriteria, KPIEvaluation } from '../../types';
+import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import type { Profile, KPICriteria, KPIEvaluation } from '@/types';
 
 interface KPIPageProps {
     employees: Profile[];
     settings: Record<string, string>;
 }
 
-import { useApp } from '../../context/AppContext';
+import { useApp } from '@/context/AppContext';
 
 const KPIPage = ({ employees, settings }: KPIPageProps) => {
     const { t, lang, showToast, showConfirm } = useApp();

@@ -1,11 +1,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, FileText, CheckCircle2, Clock, XCircle, Plus, Upload, Paperclip, Image, File, X, Calendar, AlertCircle, Send } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useApp } from '../context/AppContext';
-import { supabase } from '../lib/supabase/client';
-import type { LeaveRequest, LeaveType } from '../types';
-import { SettingsToolbar } from '../components/SettingsToolbar';
+import { useAuth } from '@/context/AuthContext';
+import { useApp } from '@/context/AppContext';
+import { supabase } from '@/lib/supabase/client';
+import type { LeaveRequest, LeaveType } from '@/types';
+import { SettingsToolbar } from '@/components/SettingsToolbar';
 
 interface LeaveRequestPageProps {
     onBack: () => void;

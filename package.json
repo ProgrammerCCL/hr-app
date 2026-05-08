@@ -4,10 +4,10 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite",
-        "build": "tsc && vite build",
-        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-        "preview": "vite preview",
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
         "test": "vitest"
     },
     "dependencies": {
@@ -16,8 +16,9 @@
         "eslint": "^10.0.2",
         "framer-motion": "^11.18.2",
         "lucide-react": "^0.344.0",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
+        "next": "^16.2.6",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
         "react-router-dom": "^6.22.0",
         "tailwind-merge": "^2.6.1",
         "xlsx": "^0.18.5"

@@ -1,15 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Users, CheckCircle, XCircle, Clock, AlertTriangle, Download } from 'lucide-react';
-import { supabase } from '../../lib/supabase/client';
-import type { Profile, AttendanceLog, LeaveRequest } from '../../types';
+import { supabase } from '@/lib/supabase/client';
+import type { Profile, AttendanceLog, LeaveRequest } from '@/types';
 
 interface MonthlyReportProps {
     employees: Profile[];
     settings: Record<string, string>;
 }
 
-import { useApp } from '../../context/AppContext';
+import { useApp } from '@/context/AppContext';
 
 const MonthlyReport = ({ employees, settings }: MonthlyReportProps) => {
     const { t, lang } = useApp();

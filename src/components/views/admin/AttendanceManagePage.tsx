@@ -1,14 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, Save, X, Download, Search, Clock, AlertTriangle } from 'lucide-react';
-import { supabase } from '../../lib/supabase/client';
-import type { Profile, AttendanceLog } from '../../types';
+import { supabase } from '@/lib/supabase/client';
+import type { Profile, AttendanceLog } from '@/types';
+import { useApp } from '@/context/AppContext';
 
 interface AttendanceManageProps {
     employees: Profile[];
 }
-
-import { useApp } from '../../context/AppContext';
 
 const AttendanceManagePage = ({ employees }: AttendanceManageProps) => {
     const { t, lang, showToast, showConfirm } = useApp();
@@ -39,37 +38,52 @@ const AttendanceManagePage = ({ employees }: AttendanceManageProps) => {
             showToast(t.selectEmployeeAndTime, 'error');
             return;
         }
-        const { error } = await supabase.from('attendance_logs').insert([{
-            user_id: newLog.user_id,
-            type: newLog.type,
-            timestamp: newLog.timestamp,
-            location_name: newLog.location_name,
-            latitude: 0, longitude: 0,
-        }]);
-        if (error) {
+        
+        try {
+            // Convert local input time to UTC
+            const isoTimestamp = new Date(newLog.timestamp).toISOString();
+            
+            const { error } = await supabase.from('attendance_logs').insert([{
+                user_id: newLog.user_id,
+                type: newLog.type,
+                timestamp: isoTimestamp,
+                location_name: newLog.location_name,
+                location_lat: 0, 
+                location_lng: 0,
+            }]);
+            
+            if (error) throw error;
+            
+            setShowAddModal(false);
+            setNewLog({ user_id: '', type: 'check_in', timestamp: '', location_name: 'Head Office', note: '' });
+            fetchLogs();
+            showToast(t.success, 'success');
+        } catch (error: any) {
             showToast('Error: ' + error.message, 'error');
-            return;
         }
-        setShowAddModal(false);
-        setNewLog({ user_id: '', type: 'check_in', timestamp: '', location_name: 'Head Office', note: '' });
-        fetchLogs();
-        showToast(t.success, 'success');
     };
 
     const handleUpdateLog = async () => {
         if (!editingLog) return;
-        const { error } = await supabase.from('attendance_logs').update({
-            timestamp: editingLog.timestamp,
-            type: editingLog.type,
-            location_name: editingLog.location_name,
-        }).eq('id', editingLog.id);
-        if (error) {
+        
+        try {
+            // Convert local input time back to UTC
+            const isoTimestamp = new Date(editingLog.timestamp).toISOString();
+            
+            const { error } = await supabase.from('attendance_logs').update({
+                timestamp: isoTimestamp,
+                type: editingLog.type,
+                location_name: editingLog.location_name,
+            }).eq('id', editingLog.id);
+            
+            if (error) throw error;
+            
+            setEditingLog(null);
+            fetchLogs();
+            showToast(t.success, 'success');
+        } catch (error: any) {
             showToast('Error: ' + error.message, 'error');
-            return;
         }
-        setEditingLog(null);
-        fetchLogs();
-        showToast(t.success, 'success');
     };
 
     const requestDeleteLog = async (id: string) => {
@@ -145,6 +159,18 @@ const AttendanceManagePage = ({ employees }: AttendanceManageProps) => {
 
     const activeEmployees = employees.filter(e => e.is_active !== false);
 
+    // Helper to format UTC timestamp to local datetime-local string
+    const formatToLocalDatetime = (utcString: string) => {
+        if (!utcString) return '';
+        const date = new Date(utcString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
     return (
         <div className="space-y-6 animate-fadeIn">
             {missingCheckouts.length > 0 && (
@@ -162,7 +188,12 @@ const AttendanceManagePage = ({ employees }: AttendanceManageProps) => {
                         {missingCheckouts.map(log => {
                             const p = log.profiles as any;
                             return (
-                                <button key={log.user_id} onClick={() => { setNewLog({ user_id: log.user_id, type: 'check_out', timestamp: `${selectedDate}T17:30`, location_name: 'Head Office', note: '' }); setShowAddModal(true); }}
+                                <button key={log.user_id} onClick={() => { 
+                                    const nowStr = formatToLocalDatetime(new Date().toISOString());
+                                    const datePart = selectedDate;
+                                    setNewLog({ user_id: log.user_id, type: 'check_out', timestamp: `${datePart}T17:30`, location_name: 'Head Office', note: '' }); 
+                                    setShowAddModal(true); 
+                                }}
                                     className="px-4 py-2 bg-white rounded-xl text-xs font-black text-amber-700 hover:bg-amber-600 hover:text-white transition-all border border-amber-200 shadow-sm active:scale-95">
                                     {p?.first_name} {p?.last_name} — {t.clickToAddCheckOut}
                                 </button>
@@ -247,7 +278,12 @@ const AttendanceManagePage = ({ employees }: AttendanceManageProps) => {
                                         </td>
                                         <td className="p-6">
                                             {isEditing ? (
-                                                <input type="datetime-local" value={editingLog.timestamp.slice(0, 16)} onChange={e => setEditingLog({ ...editingLog, timestamp: e.target.value + ':00Z' })} className="bg-white border-2 border-indigo-200 rounded-xl px-3 py-2 text-slate-800 text-xs w-48 font-black focus:border-indigo-500 outline-none shadow-sm" />
+                                                <input 
+                                                    type="datetime-local" 
+                                                    value={editingLog.timestamp} 
+                                                    onChange={e => setEditingLog({ ...editingLog, timestamp: e.target.value })} 
+                                                    className="bg-white border-2 border-indigo-200 rounded-xl pl-3 pr-8 py-2 text-slate-800 text-xs w-48 font-bold focus:border-indigo-500 outline-none shadow-sm" 
+                                                />
                                             ) : (
                                                 <div className="flex items-center gap-2">
                                                     <Clock size={14} className="text-slate-400" />
@@ -284,7 +320,7 @@ const AttendanceManagePage = ({ employees }: AttendanceManageProps) => {
                                                 </div>
                                             ) : (
                                                 <div className="flex justify-end gap-2">
-                                                    <button onClick={() => setEditingLog({ ...log })} className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center border border-indigo-100 shadow-sm active:scale-90"><Edit3 size={16} strokeWidth={2.5} /></button>
+                                                    <button onClick={() => setEditingLog({ ...log, timestamp: formatToLocalDatetime(log.timestamp) })} className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center border border-indigo-100 shadow-sm active:scale-90"><Edit3 size={16} strokeWidth={2.5} /></button>
                                                     <button onClick={() => requestDeleteLog(log.id)} className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center border border-rose-100 shadow-sm active:scale-90"><Trash2 size={16} strokeWidth={2.5} /></button>
                                                 </div>
                                             )}
@@ -329,7 +365,7 @@ const AttendanceManagePage = ({ employees }: AttendanceManageProps) => {
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">{t.dateTime} *</label>
-                                    <input type="datetime-local" value={newLog.timestamp} onChange={e => setNewLog({ ...newLog, timestamp: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 text-sm font-black focus:border-indigo-500 outline-none transition-all" />
+                                    <input type="datetime-local" value={newLog.timestamp} onChange={e => setNewLog({ ...newLog, timestamp: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-4 pr-10 py-3 text-slate-800 text-sm font-bold focus:border-indigo-500 outline-none transition-all" />
                                 </div>
                             </div>
                             

@@ -1,5 +1,7 @@
+'use client';
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import translations, { Lang, langLabels } from '../i18n/translations';
+import translations, { Lang, langLabels } from '@/i18n/translations';
 import { CheckCircle2, AlertCircle, Info, X, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,25 +38,29 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-    const [lang, setLangState] = useState<Lang>(() => {
-        const saved = localStorage.getItem('hrms_lang');
-        if (saved === 'en' || saved === 'th') return saved as Lang;
-        return 'th';
-    });
+    const [lang, setLangState] = useState<Lang>('th');
+    const [theme, setThemeState] = useState<Theme>('light');
 
-    const [theme, setThemeState] = useState<Theme>(() => {
-        const saved = localStorage.getItem('hrms_theme');
-        return (saved as Theme) || 'light';
-    });
+    useEffect(() => {
+        const savedLang = localStorage.getItem('hrms_lang');
+        if (savedLang === 'en' || savedLang === 'th') setLangState(savedLang as Lang);
+        
+        const savedTheme = localStorage.getItem('hrms_theme');
+        if (savedTheme) setThemeState(savedTheme as Theme);
+    }, []);
 
     const setLang = (newLang: Lang) => {
         setLangState(newLang);
-        localStorage.setItem('hrms_lang', newLang);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('hrms_lang', newLang);
+        }
     };
 
     const setTheme = (newTheme: Theme) => {
         setThemeState(newTheme);
-        localStorage.setItem('hrms_theme', newTheme);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('hrms_theme', newTheme);
+        }
     };
 
     const toggleTheme = () => {

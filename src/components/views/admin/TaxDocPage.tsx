@@ -1,9 +1,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Printer, X, DollarSign, AlertTriangle, Clock } from 'lucide-react';
-import { supabase } from '../../lib/supabase/client';
-import type { Profile, PayrollRecord } from '../../types';
-import { useApp } from '../../context/AppContext';
+import { supabase } from '@/lib/supabase/client';
+import type { Profile, PayrollRecord } from '@/types';
+import { useApp } from '@/context/AppContext';
 
 interface TaxDocPageProps {
     employees: Profile[];

@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Clock, AlertTriangle, Users, Calendar, Award, Download } from 'lucide-react';
-import { supabase } from '../../lib/supabase/client';
-import type { Profile, WorkShift } from '../../types';
+import { supabase } from '@/lib/supabase/client';
+import type { Profile, WorkShift } from '@/types';
 
 interface ExecDashProps {
     employees: Profile[];
@@ -24,7 +24,7 @@ interface EmployeeStat {
     onTimePercent: number;
 }
 
-import { useApp } from '../../context/AppContext';
+import { useApp } from '@/context/AppContext';
 
 const ExecDashboard = ({ employees, settings }: ExecDashProps) => {
     const { t, showToast } = useApp();

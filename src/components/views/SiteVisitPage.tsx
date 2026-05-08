@@ -1,10 +1,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, MapPin, Clock, Camera, X, Building, CheckCircle, Plus, User } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase/client';
-import { useApp } from '../context/AppContext';
-import type { SiteVisit } from '../types';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase/client';
+import { useApp } from '@/context/AppContext';
+import type { SiteVisit } from '@/types';
 
 const SiteVisitPage = ({ onBack }: { onBack: () => void }) => {
     const { user } = useAuth();

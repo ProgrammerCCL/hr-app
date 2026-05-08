@@ -1,11 +1,12 @@
+'use client';
 
 import { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, Calendar, PieChart, LogOut, CheckCircle, XCircle, MapPin, Clock, FileText, Settings, Building2, Edit3, Save, X, Plus, Trash2, Search, DollarSign, BarChart3, Receipt, FileCheck, Briefcase, UserPlus, Bell, ClipboardEdit, TrendingUp, PlusCircle, Menu, CalendarDays, Check } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { supabase, supabaseUrl, supabaseKey } from '../lib/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { supabase, supabaseUrl, supabaseKey } from '@/lib/supabase/client';
 import { createClient } from '@supabase/supabase-js';
-import type { Profile, AttendanceLog, LeaveRequest, Department, CompanySettings, LeaveType, WorkShift, AppNotification } from '../types';
-import { useApp } from '../context/AppContext';
+import type { Profile, AttendanceLog, LeaveRequest, Department, CompanySettings, LeaveType, WorkShift, AppNotification } from '@/types';
+import { useApp } from '@/context/AppContext';
 import MonthlyReport from './admin/MonthlyReport';
 import PayrollPage from './admin/PayrollPage';
 import PayslipPage from './admin/PayslipPage';
@@ -14,7 +15,7 @@ import TaxDocPage from './admin/TaxDocPage';
 import AttendanceManagePage from './admin/AttendanceManagePage';
 import ExecDashboard from './admin/ExecDashboard';
 import * as XLSX from 'xlsx';
-import { SettingsToolbar } from '../components/SettingsToolbar';
+import { SettingsToolbar } from '@/components/SettingsToolbar';
 
 // ===== EMPLOYEE EDIT MODAL =====
 const EmployeeEditModal = ({ employee, departments, shifts, allEmployees, onSave, onClose }: { employee: Profile; departments: Department[]; shifts: WorkShift[]; allEmployees: Profile[]; onSave: (u: Partial<Profile>) => void; onClose: () => void }) => {
@@ -167,12 +168,12 @@ const EmployeeEditModal = ({ employee, departments, shifts, allEmployees, onSave
                                     message: 'ยืนยันรีเซ็ตรหัสผ่านเป็น "123456" สำหรับพนักงานนี้?',
                                     type: 'warning'
                                 }))) return;
-                                const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+                                const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
                                 if (!serviceKey) return showToast('❌ ไม่สามารถรีเซ็ตรหัสผ่านได้เนื่องจากไม่ได้ตั้งค่า VITE_SUPABASE_SERVICE_ROLE_KEY', 'error');
 
                                 setResetting(true);
                                 try {
-                                    const adminClient = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                                    const adminClient = createClient(supabaseUrl || '', serviceKey || '', { auth: { autoRefreshToken: false, persistSession: false } });
                                     const { error } = await adminClient.auth.admin.updateUserById(employee.id, { password: '123456' });
                                     if (error) throw error;
                                     showToast('✅ รีเซ็ตรหัสผ่านเป็น "123456" สำเร็จแล้ว', 'success');
@@ -654,7 +655,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
 
         // Update email if changed
         if (emailChanged) {
-            const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+            const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
             if (!serviceKey) {
                 // Fallback: update email in profiles table only
                 await supabase.from('profiles').update({ email: newEmail }).eq('id', editingEmployee.id);
@@ -662,7 +663,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
             } else {
                 try {
                     // Use Admin API to change auth email
-                    const adminClient = createClient(supabaseUrl, serviceKey, {
+                    const adminClient = createClient(supabaseUrl || '', serviceKey || '', {
                         auth: { autoRefreshToken: false, persistSession: false }
                     });
                     const { error: authError } = await adminClient.auth.admin.updateUserById(editingEmployee.id, {
@@ -769,8 +770,8 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
         try {
             // Create a separate client so we don't lose admin session
             const tempClient = createClient(
-                supabaseUrl,
-                supabaseKey
+                supabaseUrl || '',
+                supabaseKey || ''
             );
             const { data: authData, error: authError } = await tempClient.auth.signUp({
                 email: finalEmail,
@@ -1121,7 +1122,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
             )}
 
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition duration-200 ease-in-out w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto scrollbar-hide shadow-xl md:shadow-none`}>
+            <aside className={`fixed inset-y-0 left-0 z-[100] transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:z-10 transition duration-200 ease-in-out w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto scrollbar-hide shadow-xl md:shadow-none`}>
                 <div className="flex items-center gap-3 mb-8 px-5 pt-6">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-500/30">
                         <CalendarDays size={20} />
@@ -1164,7 +1165,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
             </aside>
 
             {/* Main */}
-            <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gradient-to-br from-[#e0f2fe] via-[#f0f9ff] to-[#e0f2fe] dark:from-slate-900 dark:to-slate-800 relative">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gradient-to-br from-[#e0f2fe] via-[#f0f9ff] to-[#e0f2fe] dark:from-slate-900 dark:to-slate-800 relative z-20">
                 <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
                     <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-500/5 dark:bg-indigo-500/10 rounded-full blur-[100px]"></div>
                     <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-cyan-500/5 dark:bg-purple-500/10 rounded-full blur-[120px]"></div>

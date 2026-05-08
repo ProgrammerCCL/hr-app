@@ -1,5 +1,5 @@
-import { useApp } from '../context/AppContext';
-import type { Lang } from '../i18n/translations';
+import { useApp } from '@/context/AppContext';
+import type { Lang } from '@/i18n/translations';
 
 export function SettingsToolbar() {
     const { lang, setLang, theme, toggleTheme, langLabels } = useApp();

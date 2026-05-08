@@ -1,15 +1,16 @@
+'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Camera, MapPin, Coffee, Calendar, CalendarDays, LogOut, FileText, User, Loader2, X, Building, Briefcase, Shield, Lock, Eye, EyeOff, Crosshair, Route, Clock, Mail, Phone, CreditCard, Edit2, Check, RotateCcw, History, ChevronLeft, ChevronRight, UserCheck, Bell } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useApp } from '../context/AppContext';
-import { supabase } from '../lib/supabase/client';
-import type { Profile, AttendanceLog, LeaveRequest, AppNotification } from '../types';
+import { useAuth } from '@/context/AuthContext';
+import { useApp } from '@/context/AppContext';
+import { supabase } from '@/lib/supabase/client';
+import type { Profile, AttendanceLog, LeaveRequest, AppNotification } from '@/types';
 import LeaveRequestPage from './LeaveRequestPage';
 import SiteVisitPage from './SiteVisitPage';
 import EmployeePayslipView from './EmployeePayslipView';
-import { SettingsToolbar } from '../components/SettingsToolbar';
+import { SettingsToolbar } from '@/components/SettingsToolbar';
 
 // === Haversine formula: คำนวณระยะทางระหว่าง 2 จุด GPS (กิโลเมตร) ===
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -268,7 +269,7 @@ interface EmployeeDashboardProps {
 const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
     const { user, signOut } = useAuth();
     const { t, lang, showToast } = useApp();
-    const navigate = useNavigate();
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState('home');
     const [currentView, setCurrentView] = useState('dashboard');
     const [loading, setLoading] = useState(true);
