@@ -51,7 +51,7 @@ const EmployeeEditModal = ({ employee, departments, shifts, allEmployees, onSave
                             <div className="w-14 h-14 rounded-full bg-slate-200 overflow-hidden shadow-inner"><img src={employee.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.email}`} alt="" className="w-full h-full object-cover" /></div>
                             <div>
                                 <p className="font-bold text-slate-800">{employee.email}</p>
-                                <p className="text-xs font-bold text-slate-500 mt-0.5">{t.idHeader}: <span className="text-indigo-600">{employee.employee_code || '-'}</span> | ID: {employee.id.slice(0, 8).toUpperCase()}</p>
+                                <p className="text-xs font-bold text-slate-500 mt-0.5">{t.idHeader}: <span className="text-indigo-600">{employee.employee_code || '-'}</span> | ID: {String(employee?.id || '').slice(0, 8).toUpperCase()}</p>
                             </div>
                         </div>
                         <div>
@@ -348,7 +348,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
 
     // === Export Monthly Distance to Excel ===
     const exportMonthlyExcel = async () => {
-        const [year, month] = selectedDate.split('-').map(Number);
+        const [year, month] = (selectedDate || '').split('-').map(Number);
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const endDay = new Date(year, month, 0).getDate();
         const endDate = `${year}-${String(month).padStart(2, '0')}-${endDay}`;
@@ -379,7 +379,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                     dailyLogs: {}
                 };
             }
-            const day = log.timestamp.split('T')[0];
+            const day = (log.timestamp || '').split('T')[0];
             if (!userData[uid].dailyLogs[day]) userData[uid].dailyLogs[day] = [];
             userData[uid].dailyLogs[day].push(log);
         });
@@ -1255,7 +1255,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                                                     <p className="text-base font-black text-slate-800 dark:text-white truncate leading-none mb-1">{log.profiles?.first_name} {log.profiles?.last_name}</p>
                                                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2 capitalize">
                                                         <span className={`w-1.5 h-1.5 rounded-full ${log.type.includes('in') ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                                                        {(t as any)[log.type] || log.type.replace('_', ' ')} • {new Date(log.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                                        {(t as any)[log.type || ''] || (log.type || '').replace('_', ' ')} • {new Date(log.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                                                     </p>
                                                 </div>
                                             </div>
@@ -1682,7 +1682,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                                             {/* Details Grid */}
                                             <div className="grid grid-cols-[100px_1fr] gap-y-2 mb-5">
                                                 <div className="text-slate-500 dark:text-gray-400 text-sm font-medium">เลขที่:</div>
-                                                <div className="text-slate-800 dark:text-white text-sm font-bold font-mono">LV-{new Date(req.created_at).getFullYear().toString().slice(2)}-{req.id.slice(0,4).toUpperCase()}</div>
+                                                <div className="text-slate-800 dark:text-white text-sm font-bold font-mono">LV-{new Date(req.created_at).getFullYear().toString().slice(2)}-{String(req?.id || '').slice(0,4).toUpperCase()}</div>
                                                 
                                                 <div className="text-slate-500 dark:text-gray-400 text-sm font-medium">ประเภท:</div>
                                                 <div className="text-slate-800 dark:text-white text-sm font-bold flex items-center gap-2">
@@ -1862,9 +1862,9 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                                                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">Time:</span>
-                                                                    <input type="time" value={s.start_time.slice(0, 5)} onChange={e => handleUpdateShiftField(s.id, 'start_time', e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-indigo-600 shadow-sm" />
+                                                                    <input type="time" value={(s.start_time || '').slice(0, 5)} onChange={e => handleUpdateShiftField(s.id, 'start_time', e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-indigo-600 shadow-sm" />
                                                                     <span className="text-xs text-slate-300">-</span>
-                                                                    <input type="time" value={s.end_time.slice(0, 5)} onChange={e => handleUpdateShiftField(s.id, 'end_time', e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-indigo-600 shadow-sm" />
+                                                                    <input type="time" value={(s.end_time || '').slice(0, 5)} onChange={e => handleUpdateShiftField(s.id, 'end_time', e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-indigo-600 shadow-sm" />
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">Late:</span>

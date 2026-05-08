@@ -179,14 +179,14 @@ const AttendanceDetailModal = ({
                             {/* Employee Card */}
                             <div className="flex items-center gap-3.5 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-sm shadow-md">
-                                    {(profile.first_name || 'U').charAt(0)}
+                                    {String(profile?.first_name || 'U').charAt(0)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-slate-800 dark:text-slate-100 text-[15px] truncate">{profile.first_name} {profile.last_name || ''}</p>
-                                    <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold">{profile.position || 'Employee'}</p>
+                                    <p className="font-bold text-slate-800 dark:text-slate-100 text-[15px] truncate">{profile?.first_name} {profile?.last_name || ''}</p>
+                                    <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold">{profile?.position || 'Employee'}</p>
                                 </div>
                                 <div className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-500/10 border border-teal-100 dark:border-teal-500/20">
-                                    <span className="text-[11px] font-mono font-black text-teal-600 dark:text-teal-400">#{baseLog.id.slice(0, 8).toUpperCase()}</span>
+                                    <span className="text-[11px] font-mono font-black text-teal-600 dark:text-teal-400">#{String(baseLog?.id || '').slice(0, 8).toUpperCase()}</span>
                                 </div>
                             </div>
 

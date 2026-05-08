@@ -121,24 +121,24 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
         if (this.state.hasError) {
             return (
                 <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
-                    <div className="max-w-4xl w-full bg-slate-800 p-8 rounded-3xl border border-rose-500/30 shadow-2xl overflow-hidden">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-rose-500 rounded-xl flex items-center justify-center shrink-0">
-                                <AlertCircle size={28} className="text-white" />
-                            </div>
-                            <h2 className="text-2xl font-black">Application Error</h2>
+                    <div className="max-w-4xl w-full text-center">
+                        <div className="w-24 h-24 bg-rose-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-[0_20px_50px_rgba(244,63,94,0.3)] animate-pulse">
+                            <AlertCircle size={48} className="text-white" strokeWidth={2.5} />
                         </div>
-                        <div className="bg-slate-950/50 rounded-2xl p-6 mb-6 border border-slate-700/50">
-                            <p className="text-rose-400 font-black mb-2 text-lg">
-                                {this.state.error?.toString() || "Unknown Error"}
+                        <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-xl">
+                            {this.state.error?.name || "Application Error"}
+                        </h2>
+                        <div className="bg-rose-950/20 backdrop-blur-md border border-rose-500/30 rounded-3xl p-6 mb-8 text-left max-w-2xl mx-auto shadow-2xl">
+                            <p className="text-rose-200 font-bold mb-4 flex items-center gap-2">
+                                <AlertCircle size={20} /> {this.state.error?.message || "Unknown Error"}
                             </p>
-                            <pre className="text-xs text-slate-400 font-mono overflow-auto max-h-[300px] whitespace-pre-wrap leading-relaxed">
-                                {this.state.error?.stack}
+                            <pre className="text-xs text-rose-300/60 font-mono overflow-auto max-h-[250px] whitespace-pre-wrap leading-relaxed scrollbar-hide p-4 bg-black/30 rounded-2xl border border-white/5">
+                                {this.state.error?.stack || "No stack trace available"}
                             </pre>
                         </div>
                         <button 
                             onClick={() => window.location.reload()}
-                            className="px-8 py-4 bg-indigo-600 rounded-2xl font-black hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
+                            className="px-10 py-5 bg-white text-rose-600 rounded-3xl font-black text-lg hover:scale-105 transition-all shadow-[0_20px_40px_rgba(255,255,255,0.1)] active:scale-95"
                         >
                             Refresh Page
                         </button>
