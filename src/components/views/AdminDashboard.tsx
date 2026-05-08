@@ -644,7 +644,16 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
         // Handle email change separately (requires Admin API)
         const newEmail = sanitized.email;
         const emailChanged = newEmail && newEmail !== editingEmployee.email;
-        delete sanitized.email; // Remove from profile update (handle separately)
+        delete sanitized.email;
+
+        // SANITIZE DATA: Ensure numeric and UUID fields are not empty strings
+        if (sanitized.base_salary === '') sanitized.base_salary = 0;
+        else if (sanitized.base_salary) sanitized.base_salary = Number(sanitized.base_salary);
+        
+        const nullIfEmpty = ['shift_id', 'manager_id', 'employee_code', 'department', 'position', 'phone', 'tax_id', 'social_security_id', 'bank_name', 'bank_account'];
+        nullIfEmpty.forEach(key => {
+            if (sanitized[key] === '') sanitized[key] = null;
+        });
 
         // Update profile data
         const { error, count } = await supabase.from('profiles').update(sanitized, { count: 'exact' }).eq('id', editingEmployee.id);
@@ -796,7 +805,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                 const updateData = {
                     first_name: newEmp.first_name,
                     last_name: newEmp.last_name,
-                    employee_code: newEmp.employee_code.toUpperCase() || null,
+                    employee_code: newEmp.employee_code ? newEmp.employee_code.toUpperCase() : null,
                     role: newEmp.role,
                     employee_type: newEmp.employee_type || 'full-time',
                     department: newEmp.department || null,
@@ -805,7 +814,7 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                     phone: newEmp.phone || null,
                     manager_id: newEmp.manager_id || null,
                     shift_id: newEmp.shift_id || null,
-                    base_salary: newEmp.base_salary || 0,
+                    base_salary: Number(newEmp.base_salary) || 0,
                     bank_name: newEmp.bank_name || null,
                     bank_account: newEmp.bank_account || null,
                     tax_id: newEmp.tax_id || null,
