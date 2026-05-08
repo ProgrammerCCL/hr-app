@@ -650,11 +650,6 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
         if (sanitized.base_salary === '') sanitized.base_salary = 0;
         else if (sanitized.base_salary) sanitized.base_salary = Number(sanitized.base_salary);
         
-        const nullIfEmpty = ['shift_id', 'manager_id', 'employee_code', 'department', 'position', 'phone', 'tax_id', 'social_security_id', 'bank_name', 'bank_account'];
-        nullIfEmpty.forEach(key => {
-            if (sanitized[key] === '') sanitized[key] = null;
-        });
-
         // Update profile data
         const { error, count } = await supabase.from('profiles').update(sanitized, { count: 'exact' }).eq('id', editingEmployee.id);
         if (error) { showToast('Error: ' + error.message, 'error'); return; }
