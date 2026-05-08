@@ -1131,7 +1131,16 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: any) => void }) => 
                                     <input value={newEmp.social_security_id} onChange={e => setNewEmp({ ...newEmp, social_security_id: e.target.value })} placeholder="เลขบัตรประชาชน 13 หลัก" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-sm font-medium focus:border-indigo-500 focus:outline-none transition-all" />
                                 </div>
                                 <div className="flex gap-4 pt-4">
-                                    <button onClick={() => setShowAddEmployee(false)} className="flex-1 py-4 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all active:scale-95">ยกเลิก</button>
+                                    <button onClick={() => {
+                                        setShowAddEmployee(false);
+                                        setNewEmp({
+                                            email: '', password: '123456', first_name: '', last_name: '', employee_code: '',
+                                            role: 'employee', employee_type: 'full-time', department: '', position: '', phone: '',
+                                            manager_id: '', shift_id: '', base_salary: 0, bank_name: '',
+                                            bank_account: '', tax_id: '', social_security_id: '',
+                                            start_date: new Date().toISOString().split('T')[0]
+                                        });
+                                    }} className="flex-1 py-4 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all active:scale-95">ยกเลิก</button>
                                     <button onClick={handleAddEmployee} disabled={addingEmp} className="flex-[1.5] py-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 active:scale-95 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 disabled:opacity-50">
                                         <UserPlus size={20} strokeWidth={2.5} /> {addingEmp ? 'กำลังสร้าง...' : 'สร้างพนักงาน'}
                                     </button>
