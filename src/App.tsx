@@ -9,6 +9,17 @@ import AdminDashboard from './pages/AdminDashboard';
 import type { Profile } from './types';
 import type { Lang } from './i18n/translations';
 
+// Global Error Logging for Production
+if (typeof window !== 'undefined') {
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error('GLOBAL_CRASH:', { message, source, lineno, colno, error });
+        return false;
+    };
+    window.onunhandledrejection = function(event) {
+        console.error('UNHANDLED_PROMISE:', event.reason);
+    };
+}
+
 
 
 function AuthWrapper() {
@@ -82,13 +93,23 @@ function AuthWrapper() {
     const navigate = (view: string) => setCurrentView(view);
 
     const renderView = () => {
-        switch (currentView) {
-            case 'admin-dashboard':
-                return <AdminDashboard onNavigate={navigate} />;
-            case 'employee-dashboard':
-                return <EmployeeDashboard onNavigate={navigate} />;
-            default:
-                return <EmployeeDashboard onNavigate={navigate} />;
+        try {
+            switch (currentView) {
+                case 'admin-dashboard':
+                    return <AdminDashboard onNavigate={navigate} />;
+                case 'employee-dashboard':
+                    return <EmployeeDashboard onNavigate={navigate} />;
+                default:
+                    return <EmployeeDashboard onNavigate={navigate} />;
+            }
+        } catch (err: any) {
+            console.error('RenderView Error:', err);
+            return (
+                <div className="p-8 text-center bg-rose-500/10 rounded-3xl border border-rose-500/30">
+                    <h3 className="text-rose-400 font-black mb-2">Render Error</h3>
+                    <p className="text-sm text-rose-300/70">{err.message}</p>
+                </div>
+            );
         }
     };
 
@@ -132,8 +153,12 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
                             <p className="text-rose-200 font-bold mb-4 flex items-center gap-2">
                                 <AlertCircle size={20} /> {this.state.error?.message || "Unknown Error"}
                             </p>
-                            <pre className="text-xs text-rose-300/60 font-mono overflow-auto max-h-[250px] whitespace-pre-wrap leading-relaxed scrollbar-hide p-4 bg-black/30 rounded-2xl border border-white/5">
+                            <pre className="text-xs text-rose-300/60 font-mono overflow-auto max-h-[150px] whitespace-pre-wrap leading-relaxed scrollbar-hide p-4 bg-black/30 rounded-2xl border border-white/5 mb-4">
                                 {this.state.error?.stack || "No stack trace available"}
+                            </pre>
+                            <p className="text-rose-400/50 text-[10px] font-black uppercase tracking-widest mb-2 px-1">Component Stack</p>
+                            <pre className="text-[10px] text-rose-300/40 font-mono overflow-auto max-h-[150px] whitespace-pre-wrap leading-tight scrollbar-hide p-4 bg-black/20 rounded-2xl border border-white/5">
+                                {this.state.info?.componentStack || "No component stack available"}
                             </pre>
                         </div>
                         <button 
@@ -156,7 +181,7 @@ function App() {
             <AppProvider>
                 <AuthProvider>
                     <div className="fixed top-2 left-2 z-[9999] px-2 py-1 bg-black/50 text-[10px] text-white rounded font-mono pointer-events-none">
-                        v1.0.debug-h1-fix
+                        v1.0.debug-stack-trace
                     </div>
                     <AuthWrapper />
                 </AuthProvider>
